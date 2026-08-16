@@ -34,6 +34,12 @@ Die fachlichen Anforderungen stehen in `docs/requirements.md` und sind bei Umset
 - Die Application-Schicht darf nicht von Adaptern abhängen
 - Web- und Persistence-Adapter greifen nicht direkt aufeinander zu
 - Die wichtigsten Abhängigkeitsregeln werden mit ArchUnit-Tests abgesichert
+- jMolecules wird zur expliziten Kennzeichnung fachlicher und architektonischer Bausteine verwendet
+- Domänenobjekte werden mit passenden jMolecules-DDD-Annotationen wie `@AggregateRoot`, `@Entity` und `@ValueObject` markiert
+- Die Identität von `@Entity`- und `@AggregateRoot`-Typen wird mit `@Identity` markiert
+- Im Domänenkern steht die führende fachliche Klassendeklaration einer Datei direkt nach Package, Imports und Annotationen oben; unterstützende IDs, Namen, Value Objects oder Enums folgen darunter
+- Beim späteren Einführen der strukturellen Ringe werden auch `domain`, `application` und `adapter` mit passenden jMolecules-Architekturannotationen markiert
+- jMolecules-Annotationen dokumentieren die Architekturabsicht; sie ersetzen nicht die Package-Struktur oder ArchUnit-Tests
 
 ## Leitplanken
 
