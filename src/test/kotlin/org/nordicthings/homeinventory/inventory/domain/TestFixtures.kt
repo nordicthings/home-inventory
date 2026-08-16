@@ -6,7 +6,7 @@ fun testItem(
     Item(
         id = ItemId.newId(),
         name = ItemName.of("Laptop"),
-        category = Category.of("Computer & Peripherie"),
+        categoryId = CategoryId.newId(),
         estimatedValue = estimatedValue,
     )
 

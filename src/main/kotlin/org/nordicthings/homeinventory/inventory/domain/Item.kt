@@ -12,7 +12,7 @@ class Item(
     @Identity
     val id: ItemId,
     name: ItemName,
-    category: Category,
+    categoryId: CategoryId,
     estimatedValue: MonetaryValue,
     note: String = "",
 ) {
@@ -22,13 +22,13 @@ class Item(
     var name: ItemName = name
         private set
 
-    var category: Category = category
+    var categoryId: CategoryId = categoryId
         private set
 
     var estimatedValue: MonetaryValue = estimatedValue
         private set
 
-    var note: String = note.trim()
+    var note: String = note
         private set
 
     val locationQuantities: Map<LocationId, Quantity>
@@ -51,8 +51,8 @@ class Item(
         this.name = name
     }
 
-    fun changeCategory(category: Category) {
-        this.category = category
+    fun changeCategory(categoryId: CategoryId) {
+        this.categoryId = categoryId
     }
 
     fun changeEstimatedValue(estimatedValue: MonetaryValue) {

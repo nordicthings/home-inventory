@@ -8,6 +8,7 @@ import kotlin.test.assertNull
 
 class ItemTest {
 
+    @Test
     fun `item id is initialized to new id`() {
         val item = testItem()
 
@@ -31,10 +32,9 @@ class ItemTest {
     @Test
     fun `item changeCategory changes item category`() {
         val item = testItem()
-        val currentCategory = item.category
-        val newCategory = Category.of(currentCategory.name.uppercase())
-        item.changeCategory(newCategory)
-        assertEquals(newCategory, item.category)
+        val newCategoryId = CategoryId.newId()
+        item.changeCategory(newCategoryId)
+        assertEquals(newCategoryId, item.categoryId)
     }
 
     @Test

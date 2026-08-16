@@ -33,7 +33,7 @@ Jeder Gegenstand hat diese Felder:
 - Schätzwert
 - Freie Notiz
 
-Name und Kategorie sind Pflichtfelder.
+Name, Kategorie und Schätzwert sind Pflichtfelder. Der Schätzwert darf 0 sein. Die Notiz ist optional.
 
 Jeder Gegenstand hat eine interne eindeutige ID. IDs werden in der Domäne grundsätzlich als UUID modelliert.
 
@@ -184,11 +184,13 @@ Ein Ort, an dem sich noch Gegenstände befinden, kann nicht gelöscht werden.
 
 Die genannten Kategorien sind Startwerte.
 
-Kategorien sind fachliche Werte. Sie haben keine interne ID.
+Kategorien gehören zu den Stammdaten bzw. Strukturdaten.
+
+Jede Kategorie hat eine interne eindeutige ID. IDs werden in der Domäne grundsätzlich als UUID modelliert.
 
 Kategorien sind pflegbar. Sie können in der Anwendung angelegt, bearbeitet und gelöscht werden.
 
-Eine Änderung des Namens einer Kategorie erzeugt fachlich eine neue Kategorie.
+Kategorien können umbenannt werden. Die Zuordnung bestehender Gegenstände zu dieser Kategorie bleibt dabei erhalten.
 
 Kategorienamen sind eindeutig.
 
@@ -204,9 +206,282 @@ Eine Kategorie, der noch Gegenstände zugeordnet sind, kann nicht gelöscht werd
 
 `Sonstiges` ist eine Kategorie wie alle anderen auch.
 
+## Start-Bezugsquellen
+
+- Amazon
+- Lüchau
+- Toom
+- Euronics
+- rsMöbel
+- Mediamarkt
+- Saturn
+- Sonstige
+
+Die genannten Bezugsquellen sind Startwerte.
+
 ## Startdaten
 
-Initiale Orte und Kategorien werden über ein Liquibase- oder SQL-Skript angelegt.
+Initiale Orte, Kategorien und Bezugsquellen werden über ein Liquibase- oder SQL-Skript angelegt.
+
+## Use Cases
+
+### Gegenstand anlegen
+
+Ein Gegenstand wird mit den zentralen Attributen Name, Kategorie und Schätzwert angelegt. Die Notiz ist optional.
+
+Beim Anlegen muss eine existierende Kategorie ausgewählt werden.
+
+Beim Anlegen muss der normalisierte Gegenstandsname eindeutig sein.
+
+Für eine effiziente Erfassung kann beim Anlegen optional direkt ein Zugang und/oder ein Ortsbestand miterfasst werden.
+
+Wenn beim Anlegen ein Ortsbestand miterfasst wird, müssen Ort und Menge angegeben werden. Die Menge muss größer als 0 sein.
+
+Wenn beim Anlegen ein Zugang miterfasst wird, gelten dieselben Regeln wie beim separaten Erfassen eines Zugangs.
+
+Wenn beim Anlegen Ortsbestand und Zugang miterfasst werden und die Gesamtmenge der Zugänge die aktuelle Gesamtmenge an Orten übersteigt, wird der Benutzer darauf hingewiesen.
+
+Ein Zugang beim Anlegen ist optional. Viele Gegenstände werden insbesondere bei der initialen Inventarisierung ohne Zugang erfasst, wenn ihre Bezugsquelle nicht mehr bekannt ist.
+
+Ein Zugang ohne Bezugsquelle ist nicht erlaubt.
+
+Es wird keine künstliche Bezugsquelle wie `Unbekannt` verwendet, nur um unbekannte Bezugsquellen abzubilden.
+
+### Gegenstand bearbeiten
+
+Beim Bearbeiten eines Gegenstands können Name, Kategorie, Schätzwert und Notiz geändert werden.
+
+Beim Umbenennen eines Gegenstands muss der normalisierte neue Name eindeutig sein. Der bearbeitete Gegenstand selbst wird dabei nicht als Konflikt betrachtet.
+
+Beim Ändern der Kategorie muss eine existierende Kategorie ausgewählt werden.
+
+Der Schätzwert muss größer oder gleich 0 sein.
+
+Ortsbestände und Zugänge werden über eigene Use Cases gepflegt.
+
+### Gegenstand löschen
+
+Das Löschen eines Gegenstands muss vom Benutzer bestätigt werden.
+
+Beim Löschen eines Gegenstands werden alle Zuordnungen dieses Gegenstands entfernt.
+
+Orte und Bezugsquellen bleiben beim Löschen eines Gegenstands bestehen, auch wenn sie danach keine Zuordnungen mehr haben.
+
+Ein Gegenstand kann unabhängig von Ortsmengen und Zugängen gelöscht werden.
+
+Das Löschen eines Gegenstands ist endgültig. Es gibt keinen Papierkorb und kein Soft Delete.
+
+### Ortsbestand setzen
+
+Beim Ortsbestand setzen wird für einen Gegenstand die absolute Menge an einem Ort gesetzt.
+
+Wird die Menge auf 0 gesetzt, wird die Ortszuordnung entfernt.
+
+Wenn für einen Gegenstand an einem Ort noch keine Ortszuordnung existiert und ein Ortsbestand neu gesetzt wird, muss die Menge größer als 0 sein.
+
+Eine Ortszuordnung mit Menge 0 ist nicht erlaubt.
+
+Wenn beim Setzen eines neuen Ortsbestands die Menge 0 angegeben wird, erhält der Benutzer eine Fehlermeldung.
+
+Ortsbestand setzen ist eine Korrektur- bzw. Erfassungsfunktion. Dabei darf der Bestand auf einen beliebigen Wert größer oder gleich 0 gesetzt werden, sofern die Regeln für neue Ortszuordnungen eingehalten werden.
+
+Wenn nach dem Setzen eines Ortsbestands die Gesamtmenge der Zugänge die aktuelle Gesamtmenge an Orten übersteigt, wird der Benutzer darauf hingewiesen.
+
+Wenn die Gesamtmenge der Zugänge kleiner ist als die aktuelle Gesamtmenge an Orten, wird dies nicht kommentiert.
+
+### Abgang erfassen
+
+Ein Abgang reduziert die Menge eines Gegenstands an einem Ort.
+
+Beim Erfassen eines Abgangs wird immer der Ort angegeben, an dem die Menge reduziert wird.
+
+Wenn die Abgangsmenge größer ist als die Menge am angegebenen Ort, ist dies ein fachlicher Fehler.
+
+Der Grund des Abgangs wird nicht erfasst.
+
+Abgänge und Zugänge sind fachlich unabhängig. Ein Abgang verändert keine Zugänge.
+
+Wenn nach einem Abgang die Gesamtmenge der Zugänge die aktuelle Gesamtmenge an Orten übersteigt, wird der Benutzer darauf hingewiesen.
+
+### Umlagerung erfassen
+
+Eine Umlagerung verschiebt Exemplare eines Gegenstands von einem Quellort an einen Zielort.
+
+Für eine Umlagerung werden Gegenstand, Quellort, Zielort und Menge angegeben.
+
+Quellort und Zielort müssen unterschiedlich sein.
+
+Quellort und Zielort müssen existieren.
+
+Die Umlagerungsmenge darf die aktuelle Menge am Quellort nicht überschreiten.
+
+Wenn für den Zielort noch keine Ortszuordnung existiert, wird sie durch die Umlagerung angelegt.
+
+Wenn die Menge am Quellort durch die Umlagerung auf 0 fällt, wird die Quell-Ortszuordnung gelöscht.
+
+Die Änderung am Quellort und die Änderung am Zielort erfolgen atomar.
+
+### Zugang erfassen
+
+Ein Zugang erfasst, dass Exemplare eines Gegenstands über eine Bezugsquelle hinzugekommen sind.
+
+Für einen Zugang werden Gegenstand, Bezugsquelle und Menge angegeben.
+
+Kaufdatum und Kaufpreis werden ebenfalls erfasst; beide Angaben sind optional. Ein unbekannter Kaufpreis wird mit 0 abgebildet.
+
+Ein Zugang verändert keine Ortsmengen.
+
+Wenn beim Erfassen eines Zugangs eine fachlich gleiche Gegenstand-Bezugsquelle-Zuordnung bereits existiert, wird deren Menge erhöht. Der Benutzer erhält darüber einen kurzen informativen Hinweis.
+
+Bestehende Zugänge können nachträglich bearbeitet werden, um Fehler zu korrigieren. Bearbeitbar sind Bezugsquelle, Menge, Kaufpreis und Kaufdatum.
+
+Wenn ein Zugang so bearbeitet wird, dass er fachlich gleich zu einem anderen Zugang desselben Gegenstands wird, werden die Mengen beider Zugänge zusammengeführt.
+
+Beim Bearbeiten eines Zugangs darf die Bezugsquelle geändert werden. Die neue Bezugsquelle muss existieren.
+
+Beim Bearbeiten eines Zugangs darf der Kaufpreis leer gelassen werden; intern wird dann 0 gespeichert.
+
+Beim Bearbeiten eines Zugangs darf das Kaufdatum entfernt werden.
+
+Die Menge eines Zugangs darf beim Bearbeiten nicht auf 0 gesetzt werden. Wenn ein Zugang gelöscht werden soll, muss dies über den dedizierten Lösch-Use-Case erfolgen.
+
+Bestehende Zugänge können gelöscht werden. Das ist auch erlaubt, wenn aktuell Ortsmengen für den Gegenstand existieren.
+
+Das Löschen eines Zugangs muss vom Benutzer bestätigt werden.
+
+Wenn durch das Löschen eines Zugangs keine Zugänge mehr existieren, aber noch Ortsbestände vorhanden sind, erfolgt kein Hinweis.
+
+### Stammdaten pflegen
+
+Orte, Bezugsquellen und Kategorien können angelegt, bearbeitet und gelöscht werden.
+
+Beim Anlegen eines Orts sind Name und Ortstyp Pflichtfelder.
+
+Beim Bearbeiten eines Orts können Name und Ortstyp geändert werden.
+
+Beim Anlegen oder Umbenennen eines Orts muss der normalisierte Ortsname eindeutig sein.
+
+Ein Ort kann nur gelöscht werden, wenn keine Ortszuordnung mehr existiert.
+
+Die initial angelegten Orte unterscheiden sich fachlich nicht von später manuell angelegten Orten.
+
+Beim Anlegen einer Kategorie ist der Name Pflichtfeld.
+
+Kategorien können umbenannt werden. Die Zuordnung bestehender Gegenstände bleibt erhalten.
+
+Beim Anlegen oder Umbenennen einer Kategorie muss der normalisierte Kategoriename eindeutig sein.
+
+Eine Kategorie kann nur gelöscht werden, wenn kein Gegenstand dieser Kategorie zugeordnet ist.
+
+Beim Anlegen einer Bezugsquelle ist der Name Pflichtfeld. Details sind optional.
+
+Beim Bearbeiten einer Bezugsquelle können Name und Details geändert werden.
+
+Beim Anlegen oder Umbenennen einer Bezugsquelle muss der normalisierte Bezugsquellenname eindeutig sein.
+
+Eine Bezugsquelle kann nur gelöscht werden, wenn keine Gegenstand-Bezugsquelle-Zuordnung existiert.
+
+Wenn ein Stammdatensatz nicht gelöscht werden kann, reicht eine einfache Fehlermeldung.
+
+Das Löschen von Orten, Kategorien und Bezugsquellen muss vom Benutzer bestätigt werden.
+
+### Gegenstände suchen und filtern
+
+Gegenstände können nach Name, Ort, Bezugsquelle und Kategorie gefiltert werden.
+
+Die Namenssuche ist eine Enthält-Suche auf dem normalisierten Gegenstandsnamen. Der Suchbegriff wird ebenfalls normalisiert.
+
+Wildcards werden vorerst nicht unterstützt.
+
+Mehrere Filter werden mit UND verknüpft.
+
+Der Filter nach Ort findet Gegenstände, die aktuell eine Menge größer als 0 an diesem Ort haben.
+
+Der Filter nach Bezugsquelle findet Gegenstände mit mindestens einem Zugang zu dieser Bezugsquelle, unabhängig von Ortsmengen.
+
+Der Filter nach Kategorie verwendet die Kategorie-ID.
+
+### Hauptliste anzeigen
+
+Die Hauptliste zeigt Gegenstände mit folgenden Spalten:
+
+- Name
+- Kategorie
+- Gesamtmenge
+- Durchschnittlicher Stückwert
+- Gesamtwert
+
+Die Hauptliste ist standardmäßig alphabetisch nach Name sortiert.
+
+Gegenstände mit Gesamtmenge 0 werden in der Hauptliste angezeigt.
+
+Wenn kein durchschnittlicher Stückwert oder Gesamtwert bestimmbar ist, zeigt die UI `unbekannt`.
+
+### Gegenstandsdetails anzeigen
+
+Die Detailansicht eines Gegenstands zeigt:
+
+- zentrale Gegenstandsdaten
+- Ortsbestände
+- Zugänge
+- berechneter durchschnittlicher Stückwert
+- berechneter Gesamtwert
+
+### Hinweise und Fehler
+
+Hinweise blockieren den jeweiligen Use Case nicht.
+
+Hinweise werden nach Abschluss des jeweiligen Use Cases angezeigt.
+
+Fachliche Fehler werden unterscheidbar modelliert.
+
+Folgende fachliche Fehler sind für Version 1 relevant:
+
+- Name bereits vergeben: Beim Anlegen oder Umbenennen von Gegenstand, Ort, Kategorie oder Bezugsquelle existiert der normalisierte Name bereits.
+- Menge zu groß: Abgang oder Umlagerung überschreitet die aktuelle Menge am Quellort.
+- Ungültige Menge: Eine Menge verletzt die fachlichen Regeln, z. B. Zugang 0, neuer Ortsbestand 0 oder negative Menge.
+- Stammdatensatz wird noch verwendet: Ort, Kategorie oder Bezugsquelle soll gelöscht werden, wird aber noch verwendet.
+
+Folgende Situationen sind keine fachlichen Fehler:
+
+- Eine Suche oder Filterung findet keine Gegenstände. In diesem Fall ist die Ergebnisliste leer.
+- Eine referenzierte Kategorie, ein referenzierter Ort oder eine referenzierte Bezugsquelle fehlt nicht während der normalen Bedienung, da diese Werte ausschließlich aus Stammdaten ausgewählt werden.
+- Ein Abgang oder eine Umlagerung von einem nicht zugeordneten Ort ist während der normalen Bedienung nicht möglich, da dafür eine bestehende Ortszuordnung ausgewählt wird.
+
+Folgende Hinweise sind für Version 1 relevant:
+
+- Zugang wurde zusammengeführt: Beim Erfassen oder Bearbeiten eines Zugangs wurde eine fachlich gleiche Gegenstand-Bezugsquelle-Zuordnung gefunden und die Menge zusammengeführt.
+- Zugangsgesamtmenge übersteigt Ortsgesamtmenge: Die Gesamtmenge der Zugänge ist größer als die aktuelle Gesamtmenge an Orten.
+
+### Use-Case-Namen
+
+Die Use Cases werden in der Anwendung einheitlich mit verb-orientierten englischen Namen bezeichnet.
+
+Für Version 1 sind folgende Use Cases vorgesehen:
+
+- `CreateItem`: Gegenstand anlegen, optional mit initialem Ortsbestand und/oder initialem Zugang.
+- `UpdateItem`: Name, Kategorie, Schätzwert und Notiz eines Gegenstands ändern.
+- `DeleteItem`: Gegenstand inklusive Zuordnungen löschen.
+- `GetItemDetails`: Detailansicht eines Gegenstands mit Ortsbeständen und Zugängen laden.
+- `SearchItems`: Hauptliste mit Filtern nach Name, Ort, Bezugsquelle und Kategorie laden.
+- `SetItemLocationQuantity`: Absolute Menge eines Gegenstands an einem Ort setzen.
+- `RemoveFromLocation`: Menge eines Gegenstands an einem Ort durch Abgang reduzieren.
+- `RelocateItem`: Menge eines Gegenstands von einem Quellort an einen Zielort umlagern.
+- `AddItemAcquisition`: Zugang eines Gegenstands erfassen.
+- `UpdateItemAcquisition`: Zugang eines Gegenstands bearbeiten.
+- `DeleteItemAcquisition`: Zugang eines Gegenstands löschen.
+- `CreateLocation`: Ort anlegen.
+- `UpdateLocation`: Ort bearbeiten.
+- `DeleteLocation`: Ort löschen.
+- `CreateCategory`: Kategorie anlegen.
+- `UpdateCategory`: Kategorie bearbeiten.
+- `DeleteCategory`: Kategorie löschen.
+- `CreateSource`: Bezugsquelle anlegen.
+- `UpdateSource`: Bezugsquelle bearbeiten.
+- `DeleteSource`: Bezugsquelle löschen.
+- `GetLocationList`: Orte alphabetisch sortiert laden.
+- `GetCategoryList`: Kategorien alphabetisch sortiert laden.
+- `GetSourceList`: Bezugsquellen alphabetisch sortiert laden.
 
 ## Gestaltung
 
@@ -224,7 +499,8 @@ Domänenobjekte werden im Code englisch benannt. Die Anwendungsoberfläche bleib
 | ID | ID | Interne eindeutige ID eines Domänenobjekts. IDs werden in der Domäne grundsätzlich als UUID modelliert. |
 | Gegenstands-ID | Item ID | Interne eindeutige ID eines Gegenstands. Sie dient der technischen und fachlichen Identifikation, unabhängig vom Namen. |
 | Gegenstandsname | Item Name | Fachlich eindeutiger Name eines Gegenstands. Es darf keine zwei Gegenstände mit gleichem Namen geben. Die Eindeutigkeit ist unabhängig von Groß- und Kleinschreibung und wird später im Application-Ring über den normalisierten Namen durchgesetzt. |
-| Kategorie | Category | Fachliche Einordnung eines Gegenstands hinsichtlich seines Gebrauchs, z. B. Möbel, Unterhaltungselektronik oder Computer & Peripherie. Jeder Gegenstand hat genau eine Kategorie. Kategorien sind fachliche Werte ohne interne ID. |
+| Kategorie | Category | Stammdatum zur fachlichen Einordnung eines Gegenstands hinsichtlich seines Gebrauchs, z. B. Möbel, Unterhaltungselektronik oder Computer & Peripherie. Jeder Gegenstand hat genau eine Kategorie. |
+| Kategorie-ID | Category ID | Interne eindeutige ID einer Kategorie. |
 | Ort | Location | Ein Ort, an dem sich Exemplare eines Gegenstands befinden können. Orte können Räume im Haus oder Orte außerhalb des Hauses sein, z. B. Büro. |
 | Orts-ID | Location ID | Interne eindeutige ID eines Orts. |
 | Ortsname | Location Name | Fachlich eindeutiger Name eines Orts. Die Eindeutigkeit ist unabhängig von Groß- und Kleinschreibung und wird später im Application-Ring über den normalisierten Namen durchgesetzt. |
