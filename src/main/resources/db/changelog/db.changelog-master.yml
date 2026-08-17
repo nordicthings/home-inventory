@@ -216,3 +216,234 @@ databaseChangeLog:
             constraintName: fk_inventory_item_source_source
             referencedTableName: inventory_source
             referencedColumnNames: id
+  - changeSet:
+      id: 003-seed-inventory-master-data
+      author: codex
+      changes:
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000001" }
+              - column: { name: name, value: "Möbel" }
+              - column: { name: normalized_name, value: "möbel" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000002" }
+              - column: { name: name, value: "Multimedia & Unterhaltung" }
+              - column: { name: normalized_name, value: "multimedia & unterhaltung" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000003" }
+              - column: { name: name, value: "Computer & Peripherie" }
+              - column: { name: normalized_name, value: "computer & peripherie" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000004" }
+              - column: { name: name, value: "Kameras & Zubehör" }
+              - column: { name: normalized_name, value: "kameras & zubehör" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000005" }
+              - column: { name: name, value: "Haushaltsgeräte" }
+              - column: { name: normalized_name, value: "haushaltsgeräte" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000006" }
+              - column: { name: name, value: "Körper / Gesundheit / Sport" }
+              - column: { name: normalized_name, value: "körper / gesundheit / sport" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000007" }
+              - column: { name: name, value: "Software" }
+              - column: { name: normalized_name, value: "software" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000008" }
+              - column: { name: name, value: "Audio / Video" }
+              - column: { name: normalized_name, value: "audio / video" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000009" }
+              - column: { name: name, value: "Schmuck" }
+              - column: { name: normalized_name, value: "schmuck" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000010" }
+              - column: { name: name, value: "Dekoration" }
+              - column: { name: normalized_name, value: "dekoration" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000011" }
+              - column: { name: name, value: "Beleuchtung" }
+              - column: { name: normalized_name, value: "beleuchtung" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000012" }
+              - column: { name: name, value: "Bücher" }
+              - column: { name: normalized_name, value: "bücher" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000013" }
+              - column: { name: name, value: "Küchenausstattung" }
+              - column: { name: normalized_name, value: "küchenausstattung" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000014" }
+              - column: { name: name, value: "Outdoor" }
+              - column: { name: normalized_name, value: "outdoor" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000015" }
+              - column: { name: name, value: "Kleidung" }
+              - column: { name: normalized_name, value: "kleidung" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000016" }
+              - column: { name: name, value: "Spielzeug" }
+              - column: { name: normalized_name, value: "spielzeug" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000017" }
+              - column: { name: name, value: "Werkzeug" }
+              - column: { name: normalized_name, value: "werkzeug" }
+        - insert:
+            tableName: inventory_category
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000018" }
+              - column: { name: name, value: "Sonstiges" }
+              - column: { name: normalized_name, value: "sonstiges" }
+        - insert:
+            tableName: inventory_location
+            columns:
+              - column: { name: id, value: "20000000-0000-0000-0000-000000000001" }
+              - column: { name: name, value: "Küche" }
+              - column: { name: normalized_name, value: "küche" }
+              - column: { name: type, value: "INTERNAL" }
+        - insert:
+            tableName: inventory_location
+            columns:
+              - column: { name: id, value: "20000000-0000-0000-0000-000000000002" }
+              - column: { name: name, value: "Wohnzimmer" }
+              - column: { name: normalized_name, value: "wohnzimmer" }
+              - column: { name: type, value: "INTERNAL" }
+        - insert:
+            tableName: inventory_location
+            columns:
+              - column: { name: id, value: "20000000-0000-0000-0000-000000000003" }
+              - column: { name: name, value: "Bad" }
+              - column: { name: normalized_name, value: "bad" }
+              - column: { name: type, value: "INTERNAL" }
+        - insert:
+            tableName: inventory_location
+            columns:
+              - column: { name: id, value: "20000000-0000-0000-0000-000000000004" }
+              - column: { name: name, value: "Keller" }
+              - column: { name: normalized_name, value: "keller" }
+              - column: { name: type, value: "INTERNAL" }
+        - insert:
+            tableName: inventory_location
+            columns:
+              - column: { name: id, value: "20000000-0000-0000-0000-000000000005" }
+              - column: { name: name, value: "Schlafzimmer" }
+              - column: { name: normalized_name, value: "schlafzimmer" }
+              - column: { name: type, value: "INTERNAL" }
+        - insert:
+            tableName: inventory_location
+            columns:
+              - column: { name: id, value: "20000000-0000-0000-0000-000000000006" }
+              - column: { name: name, value: "Irenas Zimmer" }
+              - column: { name: normalized_name, value: "irenas zimmer" }
+              - column: { name: type, value: "INTERNAL" }
+        - insert:
+            tableName: inventory_location
+            columns:
+              - column: { name: id, value: "20000000-0000-0000-0000-000000000007" }
+              - column: { name: name, value: "Jens' Zimmer" }
+              - column: { name: normalized_name, value: "jens' zimmer" }
+              - column: { name: type, value: "INTERNAL" }
+        - insert:
+            tableName: inventory_location
+            columns:
+              - column: { name: id, value: "20000000-0000-0000-0000-000000000008" }
+              - column: { name: name, value: "Gästezimmer" }
+              - column: { name: normalized_name, value: "gästezimmer" }
+              - column: { name: type, value: "INTERNAL" }
+        - insert:
+            tableName: inventory_location
+            columns:
+              - column: { name: id, value: "20000000-0000-0000-0000-000000000009" }
+              - column: { name: name, value: "Ankleidezimmer" }
+              - column: { name: normalized_name, value: "ankleidezimmer" }
+              - column: { name: type, value: "INTERNAL" }
+        - insert:
+            tableName: inventory_source
+            columns:
+              - column: { name: id, value: "30000000-0000-0000-0000-000000000001" }
+              - column: { name: name, value: "Amazon" }
+              - column: { name: normalized_name, value: "amazon" }
+              - column: { name: details, value: "" }
+        - insert:
+            tableName: inventory_source
+            columns:
+              - column: { name: id, value: "30000000-0000-0000-0000-000000000002" }
+              - column: { name: name, value: "Lüchau" }
+              - column: { name: normalized_name, value: "lüchau" }
+              - column: { name: details, value: "" }
+        - insert:
+            tableName: inventory_source
+            columns:
+              - column: { name: id, value: "30000000-0000-0000-0000-000000000003" }
+              - column: { name: name, value: "Toom" }
+              - column: { name: normalized_name, value: "toom" }
+              - column: { name: details, value: "" }
+        - insert:
+            tableName: inventory_source
+            columns:
+              - column: { name: id, value: "30000000-0000-0000-0000-000000000004" }
+              - column: { name: name, value: "Euronics" }
+              - column: { name: normalized_name, value: "euronics" }
+              - column: { name: details, value: "" }
+        - insert:
+            tableName: inventory_source
+            columns:
+              - column: { name: id, value: "30000000-0000-0000-0000-000000000005" }
+              - column: { name: name, value: "rsMöbel" }
+              - column: { name: normalized_name, value: "rsmöbel" }
+              - column: { name: details, value: "" }
+        - insert:
+            tableName: inventory_source
+            columns:
+              - column: { name: id, value: "30000000-0000-0000-0000-000000000006" }
+              - column: { name: name, value: "Mediamarkt" }
+              - column: { name: normalized_name, value: "mediamarkt" }
+              - column: { name: details, value: "" }
+        - insert:
+            tableName: inventory_source
+            columns:
+              - column: { name: id, value: "30000000-0000-0000-0000-000000000007" }
+              - column: { name: name, value: "Saturn" }
+              - column: { name: normalized_name, value: "saturn" }
+              - column: { name: details, value: "" }
+        - insert:
+            tableName: inventory_source
+            columns:
+              - column: { name: id, value: "30000000-0000-0000-0000-000000000008" }
+              - column: { name: name, value: "Sonstige" }
+              - column: { name: normalized_name, value: "sonstige" }
+              - column: { name: details, value: "" }
