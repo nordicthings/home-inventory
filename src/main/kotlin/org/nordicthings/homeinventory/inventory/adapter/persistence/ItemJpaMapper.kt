@@ -5,11 +5,11 @@ import org.nordicthings.homeinventory.inventory.domain.Item
 import org.nordicthings.homeinventory.inventory.domain.ItemId
 import org.nordicthings.homeinventory.inventory.domain.ItemName
 import org.nordicthings.homeinventory.inventory.domain.ItemSource
+import org.nordicthings.homeinventory.inventory.domain.ItemSourceId
 import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import org.nordicthings.homeinventory.inventory.domain.Quantity
 import org.nordicthings.homeinventory.inventory.domain.SourceId
-import java.util.UUID
 
 fun Item.toJpaEntity(): ItemJpaEntity =
     ItemJpaEntity(
@@ -36,7 +36,7 @@ fun Item.toLocationQuantityJpaEntities(): List<ItemLocationQuantityJpaEntity> =
 fun Item.toItemSourceJpaEntities(): List<ItemSourceJpaEntity> =
     sources.map { itemSource ->
         ItemSourceJpaEntity(
-            id = UUID.randomUUID(),
+            id = itemSource.id.value,
             itemId = id.value,
             sourceId = itemSource.sourceId.value,
             quantity = itemSource.quantity.value,
@@ -65,25 +65,19 @@ fun ItemJpaEntity.toDomain(
         )
     }
 
-    sources.forEach {
-        item.recordAcquisition(
-            sourceId = SourceId(it.sourceId),
-            quantity = Quantity.of(it.quantity),
-            purchasePrice = MonetaryValue.of(it.purchasePriceAmount),
-            purchaseDate = it.purchaseDate,
-        )
-    }
+    sources.forEach { item.restoreAcquisition(it) }
 
     return item
 }
 
-fun ItemSource.toJpaEntity(itemId: ItemId): ItemSourceJpaEntity =
-    ItemSourceJpaEntity(
-        id = UUID.randomUUID(),
-        itemId = itemId.value,
-        sourceId = sourceId.value,
-        quantity = quantity.value,
-        purchasePriceAmount = purchasePrice.amount,
-        purchasePriceCurrency = purchasePrice.currency.currencyCode,
-        purchaseDate = purchaseDate,
+private fun Item.restoreAcquisition(sourceEntity: ItemSourceJpaEntity) {
+    addAcquisition(
+        ItemSource(
+            id = ItemSourceId(sourceEntity.id),
+            sourceId = SourceId(sourceEntity.sourceId),
+            quantity = Quantity.of(sourceEntity.quantity),
+            purchasePrice = MonetaryValue.of(sourceEntity.purchasePriceAmount),
+            purchaseDate = sourceEntity.purchaseDate,
+        ),
     )
+}

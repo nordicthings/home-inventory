@@ -108,11 +108,52 @@ class Item(
         val key = ItemSourceKey(sourceId, purchasePrice, purchaseDate)
         mutableSources[key] = mutableSources[key]?.increaseBy(quantity)
             ?: ItemSource(
+                id = ItemSourceId.newId(),
                 sourceId = sourceId,
                 purchasePrice = purchasePrice,
                 purchaseDate = purchaseDate,
                 quantity = quantity,
             )
+    }
+
+    internal fun addAcquisition(source: ItemSource) {
+        require(!mutableSources.containsKey(source.key)) {
+            "Item source with same business key already exists."
+        }
+        mutableSources[source.key] = source
+    }
+
+    fun updateAcquisition(
+        itemSourceId: ItemSourceId,
+        sourceId: SourceId,
+        quantity: Quantity,
+        purchasePrice: MonetaryValue,
+        purchaseDate: LocalDate?,
+    ) {
+        require(quantity.value > 0) { "Acquisition quantity must be greater than zero." }
+        val currentSource = sources.firstOrNull { it.id == itemSourceId }
+            ?: error("Item source does not exist.")
+        mutableSources.remove(currentSource.key)
+
+        val newSource = ItemSource(
+            id = itemSourceId,
+            sourceId = sourceId,
+            purchasePrice = purchasePrice,
+            purchaseDate = purchaseDate,
+            quantity = quantity,
+        )
+        val existingSource = mutableSources[newSource.key]
+        mutableSources[newSource.key] = if (existingSource == null) {
+            newSource
+        } else {
+            existingSource.increaseBy(quantity)
+        }
+    }
+
+    fun deleteAcquisition(itemSourceId: ItemSourceId) {
+        val source = sources.firstOrNull { it.id == itemSourceId }
+            ?: error("Item source does not exist.")
+        mutableSources.remove(source.key)
     }
 }
 

@@ -112,6 +112,20 @@ class ItemJpaRepositoryAdapterTest {
     }
 
     @Test
+    fun `keeps acquisition id when saving and loading item aggregate`() {
+        val category = existingCategory()
+        val source = existingSource("Amazon")
+        val item = existingItem(category.id)
+        item.recordAcquisition(source.id, Quantity.of(1), MonetaryValue.of("800"), null)
+        val itemSourceId = item.sources.single().id
+
+        itemRepository.save(item)
+
+        val foundItem = assertNotNull(itemRepository.findById(item.id))
+        assertEquals(itemSourceId, foundItem.sources.single().id)
+    }
+
+    @Test
     fun `finds item by normalized name`() {
         val category = existingCategory()
         val item = existingItem(category.id)

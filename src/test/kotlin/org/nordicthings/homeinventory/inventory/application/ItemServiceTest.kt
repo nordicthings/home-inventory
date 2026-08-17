@@ -75,6 +75,7 @@ class ItemServiceTest {
         assertEquals(listOf("Büro", "Küche"), details.locationQuantities.map { it.locationName.value })
         assertEquals(listOf(Quantity.of(2), Quantity.of(1)), details.locationQuantities.map { it.quantity })
         assertEquals(listOf("Amazon", "Saturn"), details.acquisitions.map { it.sourceName.value })
+        assertEquals(item.sources.sortedBy { it.sourceId.value }.map { it.id }.toSet(), details.acquisitions.map { it.id }.toSet())
         assertEquals(Quantity.of(3), details.totalQuantity)
         assertEquals(MonetaryValue.of("700"), details.averageValue)
         assertEquals(MonetaryValue.of("2100"), details.totalValue)
@@ -237,6 +238,47 @@ class ItemServiceTest {
 
         assertEquals(source.id, changedItem.sources.single().sourceId)
         verify { sourceRepository.findById(source.id) }
+        verify { itemRepository.save(changedItem) }
+    }
+
+    @Test
+    fun `updates acquisition for existing source`() {
+        val item = existingItem()
+        val source = existingSource()
+        val newSource = Source.create(SourceId.newId(), SourceName.of("Saturn"))
+        item.recordAcquisition(source.id, Quantity.of(1), MonetaryValue.of("80"), null)
+        val itemSourceId = item.sources.single().id
+        every { itemRepository.findById(item.id) } returns item
+        every { sourceRepository.findById(newSource.id) } returns newSource
+        every { itemRepository.save(item) } returns item
+
+        val changedItem = service.updateAcquisition(
+            id = item.id,
+            itemSourceId = itemSourceId,
+            sourceId = newSource.id,
+            quantity = Quantity.of(3),
+            purchasePrice = MonetaryValue.of("75"),
+            purchaseDate = LocalDate.of(2026, 2, 1),
+        )
+
+        val changedSource = changedItem.sources.single()
+        assertEquals(itemSourceId, changedSource.id)
+        assertEquals(newSource.id, changedSource.sourceId)
+        assertEquals(Quantity.of(3), changedSource.quantity)
+        verify { itemRepository.save(changedItem) }
+    }
+
+    @Test
+    fun `deletes acquisition`() {
+        val item = existingItem()
+        item.recordAcquisition(SourceId.newId(), Quantity.of(1), MonetaryValue.of("80"), null)
+        val itemSourceId = item.sources.single().id
+        every { itemRepository.findById(item.id) } returns item
+        every { itemRepository.save(item) } returns item
+
+        val changedItem = service.deleteAcquisition(item.id, itemSourceId)
+
+        assertEquals(emptyList(), changedItem.sources)
         verify { itemRepository.save(changedItem) }
     }
 

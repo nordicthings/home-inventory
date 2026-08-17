@@ -4,6 +4,7 @@ import org.nordicthings.homeinventory.inventory.domain.CategoryId
 import org.nordicthings.homeinventory.inventory.domain.Item
 import org.nordicthings.homeinventory.inventory.domain.ItemId
 import org.nordicthings.homeinventory.inventory.domain.ItemName
+import org.nordicthings.homeinventory.inventory.domain.ItemSourceId
 import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import org.nordicthings.homeinventory.inventory.domain.Quantity
@@ -44,6 +45,17 @@ interface ItemUseCase {
         purchasePrice: MonetaryValue,
         purchaseDate: LocalDate?,
     ): Item
+
+    fun updateAcquisition(
+        id: ItemId,
+        itemSourceId: ItemSourceId,
+        sourceId: SourceId,
+        quantity: Quantity,
+        purchasePrice: MonetaryValue,
+        purchaseDate: LocalDate?,
+    ): Item
+
+    fun deleteAcquisition(id: ItemId, itemSourceId: ItemSourceId): Item
 
     fun deleteItem(id: ItemId)
 }

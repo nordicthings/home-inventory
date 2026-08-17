@@ -115,6 +115,7 @@ class ItemTest {
         )
 
         assertEquals(Quantity.of(0), item.totalQuantity)
+        assertEquals(item.sources.single().id, item.sources.single().id)
         assertEquals(4, item.sources.single().quantity.value)
     }
 
@@ -141,6 +142,63 @@ class ItemTest {
         item.recordAcquisition(sourceId, Quantity.of(1), MonetaryValue.of("12"), purchaseDate)
 
         assertEquals(2, item.sources.size)
+    }
+
+    @Test
+    fun `item source can be updated by id`() {
+        val item = testItem()
+        val sourceId = SourceId.newId()
+        val newSourceId = SourceId.newId()
+        val purchaseDate = LocalDate.of(2026, 1, 3)
+        item.recordAcquisition(sourceId, Quantity.of(1), MonetaryValue.of("10"), purchaseDate)
+        val itemSourceId = item.sources.single().id
+
+        item.updateAcquisition(
+            itemSourceId = itemSourceId,
+            sourceId = newSourceId,
+            quantity = Quantity.of(3),
+            purchasePrice = MonetaryValue.of("12"),
+            purchaseDate = LocalDate.of(2026, 2, 1),
+        )
+
+        val updatedSource = item.sources.single()
+        assertEquals(itemSourceId, updatedSource.id)
+        assertEquals(newSourceId, updatedSource.sourceId)
+        assertEquals(3, updatedSource.quantity.value)
+        assertEquals(MonetaryValue.of("12"), updatedSource.purchasePrice)
+        assertEquals(LocalDate.of(2026, 2, 1), updatedSource.purchaseDate)
+    }
+
+    @Test
+    fun `updating item source merges with existing same source key`() {
+        val item = testItem()
+        val sourceId = SourceId.newId()
+        val purchaseDate = LocalDate.of(2026, 1, 3)
+        item.recordAcquisition(sourceId, Quantity.of(1), MonetaryValue.of("10"), purchaseDate)
+        item.recordAcquisition(sourceId, Quantity.of(2), MonetaryValue.of("12"), purchaseDate)
+        val sourceToUpdate = item.sources.first { it.purchasePrice == MonetaryValue.of("12") }
+
+        item.updateAcquisition(
+            itemSourceId = sourceToUpdate.id,
+            sourceId = sourceId,
+            quantity = Quantity.of(4),
+            purchasePrice = MonetaryValue.of("10"),
+            purchaseDate = purchaseDate,
+        )
+
+        assertEquals(1, item.sources.size)
+        assertEquals(5, item.sources.single().quantity.value)
+    }
+
+    @Test
+    fun `item source can be deleted by id`() {
+        val item = testItem()
+        item.recordAcquisition(SourceId.newId(), Quantity.of(1), MonetaryValue.of("10"), null)
+        val itemSourceId = item.sources.single().id
+
+        item.deleteAcquisition(itemSourceId)
+
+        assertEquals(emptyList(), item.sources)
     }
 
     @Test

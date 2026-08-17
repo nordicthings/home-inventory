@@ -12,6 +12,7 @@ import org.nordicthings.homeinventory.inventory.domain.Item
 import org.nordicthings.homeinventory.inventory.domain.ItemId
 import org.nordicthings.homeinventory.inventory.domain.ItemName
 import org.nordicthings.homeinventory.inventory.domain.ItemSource
+import org.nordicthings.homeinventory.inventory.domain.ItemSourceId
 import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import org.nordicthings.homeinventory.inventory.domain.Quantity
@@ -151,6 +152,26 @@ class ItemService(
         return itemRepository.save(item)
     }
 
+    override fun updateAcquisition(
+        id: ItemId,
+        itemSourceId: ItemSourceId,
+        sourceId: SourceId,
+        quantity: Quantity,
+        purchasePrice: MonetaryValue,
+        purchaseDate: LocalDate?,
+    ): Item {
+        val item = findItem(id)
+        ensureSourceExists(sourceId)
+        item.updateAcquisition(itemSourceId, sourceId, quantity, purchasePrice, purchaseDate)
+        return itemRepository.save(item)
+    }
+
+    override fun deleteAcquisition(id: ItemId, itemSourceId: ItemSourceId): Item {
+        val item = findItem(id)
+        item.deleteAcquisition(itemSourceId)
+        return itemRepository.save(item)
+    }
+
     override fun deleteItem(id: ItemId) {
         findItem(id)
         itemRepository.deleteById(id)
@@ -200,6 +221,7 @@ class ItemService(
         val sourceDetails = sourceRepository.findById(source.sourceId)
             ?: throw EntityNotFoundException("Source does not exist: ${source.sourceId}")
         return ItemAcquisitionDetails(
+            id = source.id,
             sourceId = source.sourceId,
             sourceName = sourceDetails.name,
             quantity = source.quantity,

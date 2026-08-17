@@ -4,6 +4,7 @@ import org.nordicthings.homeinventory.inventory.domain.CategoryId
 import org.nordicthings.homeinventory.inventory.domain.CategoryName
 import org.nordicthings.homeinventory.inventory.domain.ItemId
 import org.nordicthings.homeinventory.inventory.domain.ItemName
+import org.nordicthings.homeinventory.inventory.domain.ItemSourceId
 import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.LocationName
 import org.nordicthings.homeinventory.inventory.domain.LocationType
@@ -35,6 +36,7 @@ data class ItemLocationQuantityDetails(
 )
 
 data class ItemAcquisitionDetails(
+    val id: ItemSourceId,
     val sourceId: SourceId,
     val sourceName: SourceName,
     val quantity: Quantity,
