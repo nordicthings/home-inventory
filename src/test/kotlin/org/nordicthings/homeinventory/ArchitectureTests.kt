@@ -18,4 +18,18 @@ class ArchitectureTests {
             .that().resideInAPackage("..domain..")
             .should().dependOnClassesThat().resideInAnyPackage("org.springframework..")
             .allowEmptyShould(true)
+
+    @ArchTest
+    val domainShouldNotDependOnApplicationOrAdapters: ArchRule =
+        noClasses()
+            .that().resideInAPackage("..domain..")
+            .should().dependOnClassesThat().resideInAnyPackage("..application..", "..adapter..")
+            .allowEmptyShould(true)
+
+    @ArchTest
+    val applicationShouldNotDependOnAdapters: ArchRule =
+        noClasses()
+            .that().resideInAPackage("..application..")
+            .should().dependOnClassesThat().resideInAnyPackage("..adapter..")
+            .allowEmptyShould(true)
 }

@@ -59,7 +59,7 @@ Ein Gegenstand kann ohne Ortszuordnung existieren, z. B. wenn er bereits erfasst
 
 Die Menge eines Gegenstands an einem Ort ist immer eine positive ganze Zahl. Wird das letzte Exemplar eines Gegenstands von einem Ort entfernt, wird die Ortszuordnung gelöscht.
 
-Ortsmengen sind nur in Ausnahmefällen direkt änderbar.
+Ortsmengen sind direkt änderbar.
 
 Eine Umlagerung zwischen Orten wird als eigene fachliche Aktion behandelt, damit die Korrektur in beiden Ortszuordnungen als atomare Operation modelliert werden kann.
 
@@ -107,7 +107,7 @@ Der Kaufpreis ist nicht optional. Wenn der Kaufpreis unbekannt ist, wird 0 verwe
 
 Eine Zuordnung zwischen Gegenstand und Bezugsquelle darf ohne Kaufdatum existieren.
 
-Mehrere Zuordnungen zwischen demselben Gegenstand und derselben Bezugsquelle sind erlaubt, wenn sich Datum, Kaufpreis oder beides unterscheidet.
+Mehrere Zuordnungen zwischen demselben Gegenstand und derselben Bezugsquelle sind erlaubt, wenn sich Datum, Kaufpreis oder beides unterscheiden.
 
 Fachlich identische Zuordnungen zwischen demselben Gegenstand und derselben Bezugsquelle sind nicht erlaubt. Wenn ein Gegenstand am gleichen Tag zum gleichen Preis bei derselben Bezugsquelle gekauft oder erhalten wurde, wird dies über die Menge an der bestehenden Zuordnung abgebildet.
 

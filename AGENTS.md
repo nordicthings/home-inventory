@@ -1,3 +1,12 @@
+# ROLLE:
+Du bist Senior Softwarearchitekt.
+
+# VERMEIDEN:
+Wenn Informationen fehlen:
+- keine Annahmen treffen
+- Rückfragen stellen
+- Unsicherheiten markieren
+- 
 # Projektanweisungen
 
 ## Fachliche Vorgaben
@@ -49,3 +58,10 @@ Die fachlichen Anforderungen stehen in `docs/requirements.md` und sind bei Umset
 - Keine Datenübertragung nach außen
 - Vor Architektur-, Technologie- oder wesentlichen Funktionsentscheidungen mehrere Optionen mit Vor- und Nachteilen vorlegen und Zustimmung einholen
 - Für neue Funktionen passende Tests und Prüfung vor Übergabe
+
+## Teststrategie
+
+- Fachliche Funktionalitäten im Domain Model werden mit Unit-Test abgesichert.
+- Es wird nicht nur der Happy Path getestet, sondern auch Edge-Cases, wie z.B. leerer/falscher Input
+- Funktionalitäten im Application-Ring werden unter Zuhilfenahme von Mocks getestet.
+- Der Schnitt der Testcode-Dateien orientiert sich am Schnitt des produktiven Codes. 
