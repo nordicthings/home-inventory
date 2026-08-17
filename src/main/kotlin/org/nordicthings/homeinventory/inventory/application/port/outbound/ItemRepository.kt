@@ -1,6 +1,8 @@
 package org.nordicthings.homeinventory.inventory.application.port.outbound
 
 import org.nordicthings.homeinventory.inventory.domain.CategoryId
+import org.nordicthings.homeinventory.inventory.application.ItemListEntry
+import org.nordicthings.homeinventory.inventory.application.ItemSearchCriteria
 import org.nordicthings.homeinventory.inventory.domain.Item
 import org.nordicthings.homeinventory.inventory.domain.ItemId
 import org.nordicthings.homeinventory.inventory.domain.LocationId
@@ -10,6 +12,8 @@ interface ItemRepository {
     fun findById(id: ItemId): Item?
 
     fun findByNormalizedName(normalizedName: String): Item?
+
+    fun search(criteria: ItemSearchCriteria): List<ItemListEntry>
 
     fun existsByCategoryId(categoryId: CategoryId): Boolean
 

@@ -41,6 +41,37 @@ class ItemServiceTest {
     )
 
     @Test
+    fun `searches items with normalized name filter`() {
+        val categoryId = CategoryId.newId()
+        val criteria = ItemSearchCriteria(
+            normalizedNameContains = "lap",
+            categoryId = categoryId,
+        )
+        val result = listOf(
+            ItemListEntry(
+                id = ItemId.newId(),
+                name = ItemName.of("Laptop"),
+                categoryId = categoryId,
+                categoryName = CategoryName.of("Computer & Peripherie"),
+                totalQuantity = Quantity.of(2),
+                averageValue = MonetaryValue.of("800"),
+                totalValue = MonetaryValue.of("1600"),
+            ),
+        )
+        every { itemRepository.search(criteria) } returns result
+
+        val foundItems = service.searchItems(
+            SearchItemsFilter(
+                name = " Lap ",
+                categoryId = categoryId,
+            ),
+        )
+
+        assertEquals(result, foundItems)
+        verify { itemRepository.search(criteria) }
+    }
+
+    @Test
     fun `creates item when category exists and normalized name is unique`() {
         val category = existingCategory()
         every { itemRepository.findByNormalizedName("laptop") } returns null

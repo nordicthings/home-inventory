@@ -1,6 +1,7 @@
 package org.nordicthings.homeinventory.inventory.application
 
 import org.nordicthings.homeinventory.inventory.application.port.inbound.ItemUseCase
+import org.nordicthings.homeinventory.inventory.application.port.inbound.SearchItemsUseCase
 import org.nordicthings.homeinventory.inventory.application.port.outbound.CategoryRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.ItemRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.LocationRepository
@@ -15,6 +16,7 @@ import org.nordicthings.homeinventory.inventory.domain.Quantity
 import org.nordicthings.homeinventory.inventory.domain.SourceId
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import java.util.Locale
 
 @Service
 class ItemService(
@@ -22,7 +24,19 @@ class ItemService(
     private val categoryRepository: CategoryRepository,
     private val locationRepository: LocationRepository,
     private val sourceRepository: SourceRepository,
-) : ItemUseCase {
+) : ItemUseCase, SearchItemsUseCase {
+    override fun searchItems(filter: SearchItemsFilter): List<ItemListEntry> =
+        itemRepository.search(
+            ItemSearchCriteria(
+                normalizedNameContains = filter.name?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.lowercase(Locale.ROOT),
+                categoryId = filter.categoryId,
+                locationId = filter.locationId,
+                sourceId = filter.sourceId,
+            ),
+        )
+
     override fun createItem(
         name: ItemName,
         categoryId: CategoryId,
