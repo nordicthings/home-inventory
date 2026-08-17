@@ -1,5 +1,6 @@
 package org.nordicthings.homeinventory.inventory.application
 
+import org.nordicthings.homeinventory.inventory.application.port.inbound.GetItemDetailsUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.ItemUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.SearchItemsUseCase
 import org.nordicthings.homeinventory.inventory.application.port.outbound.CategoryRepository
@@ -10,6 +11,7 @@ import org.nordicthings.homeinventory.inventory.domain.CategoryId
 import org.nordicthings.homeinventory.inventory.domain.Item
 import org.nordicthings.homeinventory.inventory.domain.ItemId
 import org.nordicthings.homeinventory.inventory.domain.ItemName
+import org.nordicthings.homeinventory.inventory.domain.ItemSource
 import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import org.nordicthings.homeinventory.inventory.domain.Quantity
@@ -24,7 +26,34 @@ class ItemService(
     private val categoryRepository: CategoryRepository,
     private val locationRepository: LocationRepository,
     private val sourceRepository: SourceRepository,
-) : ItemUseCase, SearchItemsUseCase {
+) : ItemUseCase, SearchItemsUseCase, GetItemDetailsUseCase {
+    override fun getItemDetails(id: ItemId): ItemDetails {
+        val item = findItem(id)
+        val category = categoryRepository.findById(item.categoryId)
+            ?: throw EntityNotFoundException("Category does not exist: ${item.categoryId}")
+        return ItemDetails(
+            id = item.id,
+            name = item.name,
+            categoryId = item.categoryId,
+            categoryName = category.name,
+            estimatedValue = item.estimatedValue,
+            note = item.note,
+            locationQuantities = item.locationQuantities
+                .map { (locationId, quantity) -> toLocationQuantityDetails(locationId, quantity) }
+                .sortedBy { it.locationName.normalize() },
+            acquisitions = item.sources
+                .map { source -> toAcquisitionDetails(source) }
+                .sortedWith(
+                    compareBy<ItemAcquisitionDetails> { it.sourceName.normalize() }
+                        .thenBy { it.purchaseDate }
+                        .thenBy { it.purchasePrice.amount },
+                ),
+            totalQuantity = item.totalQuantity,
+            averageValue = item.value,
+            totalValue = item.totalValue,
+        )
+    }
+
     override fun searchItems(filter: SearchItemsFilter): List<ItemListEntry> =
         itemRepository.search(
             ItemSearchCriteria(
@@ -151,5 +180,31 @@ class ItemService(
     private fun ensureSourceExists(sourceId: SourceId) {
         sourceRepository.findById(sourceId)
             ?: throw EntityNotFoundException("Source does not exist: $sourceId")
+    }
+
+    private fun toLocationQuantityDetails(
+        locationId: LocationId,
+        quantity: Quantity,
+    ): ItemLocationQuantityDetails {
+        val location = locationRepository.findById(locationId)
+            ?: throw EntityNotFoundException("Location does not exist: $locationId")
+        return ItemLocationQuantityDetails(
+            locationId = location.id,
+            locationName = location.name,
+            locationType = location.type,
+            quantity = quantity,
+        )
+    }
+
+    private fun toAcquisitionDetails(source: ItemSource): ItemAcquisitionDetails {
+        val sourceDetails = sourceRepository.findById(source.sourceId)
+            ?: throw EntityNotFoundException("Source does not exist: ${source.sourceId}")
+        return ItemAcquisitionDetails(
+            sourceId = source.sourceId,
+            sourceName = sourceDetails.name,
+            quantity = source.quantity,
+            purchasePrice = source.purchasePrice,
+            purchaseDate = source.purchaseDate,
+        )
     }
 }

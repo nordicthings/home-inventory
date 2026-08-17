@@ -41,6 +41,56 @@ class ItemServiceTest {
     )
 
     @Test
+    fun `loads item details with master data names calculated values and sorted child entries`() {
+        val category = existingCategory()
+        val kitchen = Location.create(LocationId.newId(), LocationName.of("Küche"), LocationType.INTERNAL)
+        val office = Location.create(LocationId.newId(), LocationName.of("Büro"), LocationType.EXTERNAL)
+        val amazon = Source.create(SourceId.newId(), SourceName.of("Amazon"))
+        val saturn = Source.create(SourceId.newId(), SourceName.of("Saturn"))
+        val item = Item(
+            id = ItemId.newId(),
+            name = ItemName.of("Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("1000"),
+            note = "Arbeitsgerät",
+        )
+        item.setLocationQuantity(kitchen.id, Quantity.of(1))
+        item.setLocationQuantity(office.id, Quantity.of(2))
+        item.recordAcquisition(saturn.id, Quantity.of(1), MonetaryValue.of("900"), LocalDate.of(2026, 1, 3))
+        item.recordAcquisition(amazon.id, Quantity.of(2), MonetaryValue.of("600"), null)
+        every { itemRepository.findById(item.id) } returns item
+        every { categoryRepository.findById(category.id) } returns category
+        every { locationRepository.findById(kitchen.id) } returns kitchen
+        every { locationRepository.findById(office.id) } returns office
+        every { sourceRepository.findById(amazon.id) } returns amazon
+        every { sourceRepository.findById(saturn.id) } returns saturn
+
+        val details = service.getItemDetails(item.id)
+
+        assertEquals(item.id, details.id)
+        assertEquals("Laptop", details.name.value)
+        assertEquals("Computer & Peripherie", details.categoryName.value)
+        assertEquals(MonetaryValue.of("1000"), details.estimatedValue)
+        assertEquals("Arbeitsgerät", details.note)
+        assertEquals(listOf("Büro", "Küche"), details.locationQuantities.map { it.locationName.value })
+        assertEquals(listOf(Quantity.of(2), Quantity.of(1)), details.locationQuantities.map { it.quantity })
+        assertEquals(listOf("Amazon", "Saturn"), details.acquisitions.map { it.sourceName.value })
+        assertEquals(Quantity.of(3), details.totalQuantity)
+        assertEquals(MonetaryValue.of("700"), details.averageValue)
+        assertEquals(MonetaryValue.of("2100"), details.totalValue)
+    }
+
+    @Test
+    fun `does not load details for missing item`() {
+        val itemId = ItemId.newId()
+        every { itemRepository.findById(itemId) } returns null
+
+        assertFailsWith<EntityNotFoundException> {
+            service.getItemDetails(itemId)
+        }
+    }
+
+    @Test
     fun `searches items with normalized name filter`() {
         val categoryId = CategoryId.newId()
         val criteria = ItemSearchCriteria(
