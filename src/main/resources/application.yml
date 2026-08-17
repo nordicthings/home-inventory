@@ -2,12 +2,16 @@ spring:
   application:
     name: home-inventory
   datasource:
-    url: jdbc:h2:mem:home_inventory;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:home_inventory;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password:
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yml
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
 
 ---
 spring:

@@ -4,6 +4,8 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
     kotlin("jvm") version "2.3.0"
     kotlin("plugin.spring") version "2.3.0"
+    kotlin("plugin.jpa") version "2.3.0"
+    kotlin("plugin.allopen") version "2.3.0"
     id("org.springframework.boot") version "4.1.0"
 }
 
@@ -22,11 +24,17 @@ kotlin {
     }
 }
 
+allOpen {
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Embeddable")
+}
+
 dependencies {
     implementation(platform(SpringBootPlugin.BOM_COORDINATES))
     testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
 
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")

@@ -1,1 +1,218 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-inventory-master-data
+      author: codex
+      changes:
+        - createTable:
+            tableName: inventory_category
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: normalized_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_inventory_category_normalized_name
+        - createTable:
+            tableName: inventory_location
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: normalized_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_inventory_location_normalized_name
+              - column:
+                  name: type
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: inventory_source
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: normalized_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_inventory_source_normalized_name
+              - column:
+                  name: details
+                  type: varchar(2000)
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 002-create-inventory-items
+      author: codex
+      changes:
+        - createTable:
+            tableName: inventory_item
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: normalized_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_inventory_item_normalized_name
+              - column:
+                  name: category_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: estimated_value_amount
+                  type: decimal(19,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: estimated_value_currency
+                  type: varchar(3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: note
+                  type: varchar(4000)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: inventory_item
+            baseColumnNames: category_id
+            constraintName: fk_inventory_item_category
+            referencedTableName: inventory_category
+            referencedColumnNames: id
+        - createTable:
+            tableName: inventory_item_location_quantity
+            columns:
+              - column:
+                  name: item_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: location_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: int
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: inventory_item_location_quantity
+            columnNames: item_id, location_id
+            constraintName: pk_inventory_item_location_quantity
+        - addForeignKeyConstraint:
+            baseTableName: inventory_item_location_quantity
+            baseColumnNames: item_id
+            constraintName: fk_inventory_item_location_quantity_item
+            referencedTableName: inventory_item
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: inventory_item_location_quantity
+            baseColumnNames: location_id
+            constraintName: fk_inventory_item_location_quantity_location
+            referencedTableName: inventory_location
+            referencedColumnNames: id
+        - createTable:
+            tableName: inventory_item_source
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: item_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: purchase_price_amount
+                  type: decimal(19,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: purchase_price_currency
+                  type: varchar(3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: purchase_date
+                  type: date
+        - addUniqueConstraint:
+            tableName: inventory_item_source
+            columnNames: item_id, source_id, purchase_price_amount, purchase_price_currency, purchase_date
+            constraintName: uk_inventory_item_source_business_key
+        - addForeignKeyConstraint:
+            baseTableName: inventory_item_source
+            baseColumnNames: item_id
+            constraintName: fk_inventory_item_source_item
+            referencedTableName: inventory_item
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: inventory_item_source
+            baseColumnNames: source_id
+            constraintName: fk_inventory_item_source_source
+            referencedTableName: inventory_source
+            referencedColumnNames: id

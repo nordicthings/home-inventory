@@ -32,4 +32,18 @@ class ArchitectureTests {
             .that().resideInAPackage("..application..")
             .should().dependOnClassesThat().resideInAnyPackage("..adapter..")
             .allowEmptyShould(true)
+
+    @ArchTest
+    val webAdaptersShouldNotDependOnPersistenceAdapters: ArchRule =
+        noClasses()
+            .that().resideInAPackage("..adapter.web..")
+            .should().dependOnClassesThat().resideInAnyPackage("..adapter.persistence..")
+            .allowEmptyShould(true)
+
+    @ArchTest
+    val persistenceAdaptersShouldNotDependOnWebAdapters: ArchRule =
+        noClasses()
+            .that().resideInAPackage("..adapter.persistence..")
+            .should().dependOnClassesThat().resideInAnyPackage("..adapter.web..")
+            .allowEmptyShould(true)
 }
