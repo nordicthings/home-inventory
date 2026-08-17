@@ -18,6 +18,9 @@ class LocationJpaRepositoryAdapter(
     override fun findByNormalizedName(normalizedName: String): Location? =
         repository.findByNormalizedName(normalizedName)?.toDomain()
 
+    override fun findAllOrderByName(): List<Location> =
+        repository.findAllByOrderByNormalizedNameAsc().map { it.toDomain() }
+
     override fun save(location: Location): Location =
         repository.save(location.toJpaEntity()).toDomain()
 

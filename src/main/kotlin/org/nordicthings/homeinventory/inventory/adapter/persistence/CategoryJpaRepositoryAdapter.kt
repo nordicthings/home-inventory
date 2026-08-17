@@ -18,6 +18,9 @@ class CategoryJpaRepositoryAdapter(
     override fun findByNormalizedName(normalizedName: String): Category? =
         repository.findByNormalizedName(normalizedName)?.toDomain()
 
+    override fun findAllOrderByName(): List<Category> =
+        repository.findAllByOrderByNormalizedNameAsc().map { it.toDomain() }
+
     override fun save(category: Category): Category =
         repository.save(category.toJpaEntity()).toDomain()
 

@@ -8,6 +8,8 @@ interface CategoryRepository {
 
     fun findByNormalizedName(normalizedName: String): Category?
 
+    fun findAllOrderByName(): List<Category>
+
     fun save(category: Category): Category
 
     fun deleteById(id: CategoryId)

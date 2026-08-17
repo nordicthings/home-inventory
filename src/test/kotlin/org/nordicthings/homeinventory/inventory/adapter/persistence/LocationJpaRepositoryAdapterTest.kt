@@ -49,6 +49,17 @@ class LocationJpaRepositoryAdapterTest {
     }
 
     @Test
+    fun `finds all locations ordered by normalized name`() {
+        locationRepository.save(Location.create(LocationId.newId(), LocationName.of("Wohnzimmer"), LocationType.INTERNAL))
+        locationRepository.save(Location.create(LocationId.newId(), LocationName.of("Bad"), LocationType.INTERNAL))
+        locationRepository.save(Location.create(LocationId.newId(), LocationName.of("Küche"), LocationType.INTERNAL))
+
+        val locationNames = locationRepository.findAllOrderByName().map { it.name.value }
+
+        assertEquals(listOf("Bad", "Küche", "Wohnzimmer"), locationNames)
+    }
+
+    @Test
     fun `updates location name normalized name and type`() {
         val location = Location.create(LocationId.newId(), LocationName.of("Küche"), LocationType.INTERNAL)
         locationRepository.save(location)

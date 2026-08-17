@@ -20,6 +20,20 @@ class LocationServiceTest {
     private val service = LocationService(locationRepository, itemRepository)
 
     @Test
+    fun `loads location list from repository`() {
+        val locations = listOf(
+            Location.create(LocationId.newId(), LocationName.of("Bad"), LocationType.INTERNAL),
+            Location.create(LocationId.newId(), LocationName.of("Küche"), LocationType.INTERNAL),
+        )
+        every { locationRepository.findAllOrderByName() } returns locations
+
+        val result = service.getLocationList()
+
+        assertEquals(locations, result)
+        verify { locationRepository.findAllOrderByName() }
+    }
+
+    @Test
     fun `creates location with unique normalized name`() {
         every { locationRepository.findByNormalizedName("küche") } returns null
         every { locationRepository.save(any()) } answers { firstArg() }

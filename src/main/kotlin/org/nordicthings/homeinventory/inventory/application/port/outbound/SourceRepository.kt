@@ -8,6 +8,8 @@ interface SourceRepository {
 
     fun findByNormalizedName(normalizedName: String): Source?
 
+    fun findAllOrderByName(): List<Source>
+
     fun save(source: Source): Source
 
     fun deleteById(id: SourceId)

@@ -19,6 +19,20 @@ class SourceServiceTest {
     private val service = SourceService(sourceRepository, itemRepository)
 
     @Test
+    fun `loads source list from repository`() {
+        val sources = listOf(
+            Source.create(SourceId.newId(), SourceName.of("Amazon")),
+            Source.create(SourceId.newId(), SourceName.of("Lüchau")),
+        )
+        every { sourceRepository.findAllOrderByName() } returns sources
+
+        val result = service.getSourceList()
+
+        assertEquals(sources, result)
+        verify { sourceRepository.findAllOrderByName() }
+    }
+
+    @Test
     fun `creates source with unique normalized name`() {
         every { sourceRepository.findByNormalizedName("amazon") } returns null
         every { sourceRepository.save(any()) } answers { firstArg() }

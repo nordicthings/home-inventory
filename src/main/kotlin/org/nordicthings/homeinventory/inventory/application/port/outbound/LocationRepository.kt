@@ -8,6 +8,8 @@ interface LocationRepository {
 
     fun findByNormalizedName(normalizedName: String): Location?
 
+    fun findAllOrderByName(): List<Location>
+
     fun save(location: Location): Location
 
     fun deleteById(id: LocationId)

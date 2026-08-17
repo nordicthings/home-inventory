@@ -18,6 +18,9 @@ class SourceJpaRepositoryAdapter(
     override fun findByNormalizedName(normalizedName: String): Source? =
         repository.findByNormalizedName(normalizedName)?.toDomain()
 
+    override fun findAllOrderByName(): List<Source> =
+        repository.findAllByOrderByNormalizedNameAsc().map { it.toDomain() }
+
     override fun save(source: Source): Source =
         repository.save(source.toJpaEntity()).toDomain()
 

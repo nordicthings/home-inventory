@@ -48,6 +48,17 @@ class SourceJpaRepositoryAdapterTest {
     }
 
     @Test
+    fun `finds all sources ordered by normalized name`() {
+        sourceRepository.save(Source.create(SourceId.newId(), SourceName.of("Toom")))
+        sourceRepository.save(Source.create(SourceId.newId(), SourceName.of("Amazon")))
+        sourceRepository.save(Source.create(SourceId.newId(), SourceName.of("Saturn")))
+
+        val sourceNames = sourceRepository.findAllOrderByName().map { it.name.value }
+
+        assertEquals(listOf("Amazon", "Saturn", "Toom"), sourceNames)
+    }
+
+    @Test
     fun `updates source name normalized name and details`() {
         val source = Source.create(SourceId.newId(), SourceName.of("Amazon"), "https://example.test")
         sourceRepository.save(source)

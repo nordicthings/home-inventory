@@ -19,6 +19,20 @@ class CategoryServiceTest {
     private val service = CategoryService(categoryRepository, itemRepository)
 
     @Test
+    fun `loads category list from repository`() {
+        val categories = listOf(
+            Category(CategoryId.newId(), CategoryName.of("Bücher")),
+            Category(CategoryId.newId(), CategoryName.of("Möbel")),
+        )
+        every { categoryRepository.findAllOrderByName() } returns categories
+
+        val result = service.getCategoryList()
+
+        assertEquals(categories, result)
+        verify { categoryRepository.findAllOrderByName() }
+    }
+
+    @Test
     fun `creates category with unique normalized name`() {
         every { categoryRepository.findByNormalizedName("möbel") } returns null
         every { categoryRepository.save(any()) } answers { firstArg() }

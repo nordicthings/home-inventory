@@ -1,5 +1,6 @@
 package org.nordicthings.homeinventory.inventory.application
 
+import org.nordicthings.homeinventory.inventory.application.port.inbound.GetLocationListUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.LocationUseCase
 import org.nordicthings.homeinventory.inventory.application.port.outbound.ItemRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.LocationRepository
@@ -13,7 +14,10 @@ import org.springframework.stereotype.Service
 class LocationService(
     private val locationRepository: LocationRepository,
     private val itemRepository: ItemRepository,
-) : LocationUseCase {
+) : LocationUseCase, GetLocationListUseCase {
+    override fun getLocationList(): List<Location> =
+        locationRepository.findAllOrderByName()
+
     override fun createLocation(name: LocationName, type: LocationType): Location {
         ensureUniqueName(name)
         return locationRepository.save(Location.create(LocationId.newId(), name, type))

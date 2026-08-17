@@ -1,5 +1,6 @@
 package org.nordicthings.homeinventory.inventory.application
 
+import org.nordicthings.homeinventory.inventory.application.port.inbound.GetSourceListUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.SourceUseCase
 import org.nordicthings.homeinventory.inventory.application.port.outbound.ItemRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.SourceRepository
@@ -12,7 +13,10 @@ import org.springframework.stereotype.Service
 class SourceService(
     private val sourceRepository: SourceRepository,
     private val itemRepository: ItemRepository,
-) : SourceUseCase {
+) : SourceUseCase, GetSourceListUseCase {
+    override fun getSourceList(): List<Source> =
+        sourceRepository.findAllOrderByName()
+
     override fun createSource(name: SourceName, details: String): Source {
         ensureUniqueName(name)
         return sourceRepository.save(Source.create(SourceId.newId(), name, details))

@@ -48,6 +48,17 @@ class CategoryJpaRepositoryAdapterTest {
     }
 
     @Test
+    fun `finds all categories ordered by normalized name`() {
+        categoryRepository.save(Category(CategoryId.newId(), CategoryName.of("Werkzeug")))
+        categoryRepository.save(Category(CategoryId.newId(), CategoryName.of("Bücher")))
+        categoryRepository.save(Category(CategoryId.newId(), CategoryName.of("Möbel")))
+
+        val categoryNames = categoryRepository.findAllOrderByName().map { it.name.value }
+
+        assertEquals(listOf("Bücher", "Möbel", "Werkzeug"), categoryNames)
+    }
+
+    @Test
     fun `updates category name and normalized name`() {
         val category = Category(CategoryId.newId(), CategoryName.of("Möbel"))
         categoryRepository.save(category)

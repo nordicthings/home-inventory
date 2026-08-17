@@ -5,4 +5,6 @@ import java.util.UUID
 
 interface CategoryJpaEntityRepository : JpaRepository<CategoryJpaEntity, UUID> {
     fun findByNormalizedName(normalizedName: String): CategoryJpaEntity?
+
+    fun findAllByOrderByNormalizedNameAsc(): List<CategoryJpaEntity>
 }

@@ -1,6 +1,7 @@
 package org.nordicthings.homeinventory.inventory.application
 
 import org.nordicthings.homeinventory.inventory.application.port.inbound.CategoryUseCase
+import org.nordicthings.homeinventory.inventory.application.port.inbound.GetCategoryListUseCase
 import org.nordicthings.homeinventory.inventory.application.port.outbound.CategoryRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.ItemRepository
 import org.nordicthings.homeinventory.inventory.domain.Category
@@ -12,7 +13,10 @@ import org.springframework.stereotype.Service
 class CategoryService(
     private val categoryRepository: CategoryRepository,
     private val itemRepository: ItemRepository,
-) : CategoryUseCase {
+) : CategoryUseCase, GetCategoryListUseCase {
+    override fun getCategoryList(): List<Category> =
+        categoryRepository.findAllOrderByName()
+
     override fun createCategory(name: CategoryName): Category {
         ensureUniqueName(name)
         return categoryRepository.save(Category(CategoryId.newId(), name))
