@@ -191,6 +191,102 @@ class ItemServiceTest {
     }
 
     @Test
+    fun `updates item master data when category exists and normalized name is unique`() {
+        val currentCategory = existingCategory()
+        val newCategory = Category(CategoryId.newId(), CategoryName.of("Möbel"))
+        val item = existingItem(categoryId = currentCategory.id)
+        every { itemRepository.findById(item.id) } returns item
+        every { itemRepository.findByNormalizedName("schreibtisch") } returns null
+        every { categoryRepository.findById(newCategory.id) } returns newCategory
+        every { itemRepository.save(item) } returns item
+
+        val updatedItem = service.updateItem(
+            id = item.id,
+            name = ItemName.of("Schreibtisch"),
+            categoryId = newCategory.id,
+            estimatedValue = MonetaryValue.of("250"),
+            note = "Massivholz",
+        )
+
+        assertEquals("Schreibtisch", updatedItem.name.value)
+        assertEquals(newCategory.id, updatedItem.categoryId)
+        assertEquals(MonetaryValue.of("250"), updatedItem.estimatedValue)
+        assertEquals("Massivholz", updatedItem.note)
+        verify { itemRepository.save(updatedItem) }
+    }
+
+    @Test
+    fun `updates item master data when normalized name belongs to same item`() {
+        val category = existingCategory()
+        val item = existingItem(categoryId = category.id)
+        every { itemRepository.findById(item.id) } returns item
+        every { itemRepository.findByNormalizedName("laptop") } returns item
+        every { categoryRepository.findById(category.id) } returns category
+        every { itemRepository.save(item) } returns item
+
+        val updatedItem = service.updateItem(
+            id = item.id,
+            name = ItemName.of("Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("150"),
+            note = "Aktualisiert",
+        )
+
+        assertEquals("Laptop", updatedItem.name.value)
+        assertEquals(MonetaryValue.of("150"), updatedItem.estimatedValue)
+        assertEquals("Aktualisiert", updatedItem.note)
+        verify { itemRepository.save(updatedItem) }
+    }
+
+    @Test
+    fun `does not update item master data with duplicate item name`() {
+        val category = existingCategory()
+        val item = existingItem(categoryId = category.id)
+        val duplicateItem = Item(
+            id = ItemId.newId(),
+            name = ItemName.of("Schreibtisch"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("100"),
+        )
+        every { itemRepository.findById(item.id) } returns item
+        every { itemRepository.findByNormalizedName("schreibtisch") } returns duplicateItem
+
+        assertFailsWith<DuplicateNameException> {
+            service.updateItem(
+                id = item.id,
+                name = ItemName.of("Schreibtisch"),
+                categoryId = category.id,
+                estimatedValue = MonetaryValue.of("250"),
+                note = "",
+            )
+        }
+
+        verify(exactly = 0) { categoryRepository.findById(any()) }
+        verify(exactly = 0) { itemRepository.save(any()) }
+    }
+
+    @Test
+    fun `does not update item master data with missing category`() {
+        val item = existingItem()
+        val missingCategoryId = CategoryId.newId()
+        every { itemRepository.findById(item.id) } returns item
+        every { itemRepository.findByNormalizedName("laptop") } returns item
+        every { categoryRepository.findById(missingCategoryId) } returns null
+
+        assertFailsWith<EntityNotFoundException> {
+            service.updateItem(
+                id = item.id,
+                name = ItemName.of("Laptop"),
+                categoryId = missingCategoryId,
+                estimatedValue = MonetaryValue.of("250"),
+                note = "",
+            )
+        }
+
+        verify(exactly = 0) { itemRepository.save(any()) }
+    }
+
+    @Test
     fun `records location quantity for existing location`() {
         val item = existingItem()
         val location = existingLocation()

@@ -2,6 +2,7 @@ package org.nordicthings.homeinventory.inventory.adapter.web
 
 import org.nordicthings.homeinventory.inventory.application.ItemListEntry
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
+import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.NumberFormat
 import java.util.Locale
@@ -47,13 +48,16 @@ fun ItemListEntry.toRowView(): ItemListRowView =
 
 fun MonetaryValue?.formatForView(): String =
     this?.let {
-        "${it.amount.setScale(2, RoundingMode.HALF_UP).formatDecimalForView()} ${it.currency.currencyCode}"
+        "${it.amount.formatDecimalForView()} ${it.currency.currencyCode}"
     } ?: "unbekannt"
+
+fun MonetaryValue.formatAmountForForm(): String =
+    amount.formatDecimalForView()
 
 fun Int.formatIntegerForView(): String =
     NumberFormat.getIntegerInstance(Locale.GERMANY).format(this)
 
-private fun Number.formatDecimalForView(): String =
+private fun BigDecimal.formatDecimalForView(): String =
     NumberFormat.getNumberInstance(Locale.GERMANY)
         .apply {
             isGroupingUsed = true

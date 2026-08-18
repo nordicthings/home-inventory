@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Gegenstand anlegen - Nordic Things</title>
+    <title>Gegenstand bearbeiten - Nordic Things</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
@@ -18,11 +18,11 @@
 
 <main class="page page--narrow">
     <div class="page__header">
-        <h1>Gegenstand anlegen</h1>
-        <a class="button button--secondary" th:href="@{/items}">Zurück zur Liste</a>
+        <h1>Gegenstand bearbeiten</h1>
+        <a class="button button--secondary" th:href="@{/items/{id}(id=${page.id})}">Zurück zum Gegenstand</a>
     </div>
 
-    <form class="form" method="post" th:action="@{/items}">
+    <form class="form" method="post" th:action="@{/items/{id}(id=${page.id})}">
         <div class="form__errors" th:if="${!#lists.isEmpty(page.globalErrors)}">
             <p th:each="error : ${page.globalErrors}" th:text="${error.message}">Die Eingaben sind ungültig.</p>
         </div>
@@ -73,8 +73,8 @@
         </div>
 
         <div class="form__actions">
-            <button class="button button--primary" type="submit">Gegenstand speichern</button>
-            <a class="button button--secondary" th:href="@{/items}">Abbrechen</a>
+            <button class="button button--primary" type="submit">Änderungen speichern</button>
+            <a class="button button--secondary" th:href="@{/items/{id}(id=${page.id})}">Abbrechen</a>
         </div>
     </form>
 </main>

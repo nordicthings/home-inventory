@@ -19,6 +19,14 @@ interface ItemUseCase {
         note: String = "",
     ): Item
 
+    fun updateItem(
+        id: ItemId,
+        name: ItemName,
+        categoryId: CategoryId,
+        estimatedValue: MonetaryValue,
+        note: String = "",
+    ): Item
+
     fun renameItem(id: ItemId, name: ItemName): Item
 
     fun changeItemCategory(id: ItemId, categoryId: CategoryId): Item

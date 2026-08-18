@@ -71,12 +71,11 @@ class ItemWebControllerTest {
         assertContains(response.body(), "Küche")
         assertContains(response.body(), "Alle Bezugsquellen")
         assertContains(response.body(), "Amazon")
-        assertContains(response.body(), "Keine Gegenstände gefunden")
     }
 
     @Test
     fun `renders item table fragment`() {
-        val response = get("/items/table?name=Lap")
+        val response = get("/items/table?name=KeinSolcherGegenstand")
 
         assertEquals(200, response.statusCode())
         assertContains(response.body(), "<table class=\"data-table\">")
@@ -92,6 +91,8 @@ class ItemWebControllerTest {
         assertContains(response.body(), "Name")
         assertContains(response.body(), "Kategorie auswählen")
         assertContains(response.body(), "Schätzwert")
+        assertContains(response.body(), """type="text"""")
+        assertContains(response.body(), "EUR")
         assertContains(response.body(), "Computer &amp; Peripherie")
     }
 
@@ -146,6 +147,53 @@ class ItemWebControllerTest {
     }
 
     @Test
+    fun `creates item with german formatted estimated value`() {
+        val createForm = get("/items/new").body()
+        val categoryId = Regex("""<option value="([^"]+)">Computer &amp; Peripherie</option>""")
+            .find(createForm)
+            ?.groupValues
+            ?.get(1)
+            ?: error("Category option not found.")
+
+        val response = post(
+            "/items",
+            mapOf(
+                "name" to "German-Format-Laptop",
+                "categoryId" to categoryId,
+                "estimatedValue" to "1.234,56",
+                "note" to "",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        val item = assertNotNull(itemRepository.findByNormalizedName("german-format-laptop"))
+        assertEquals(MonetaryValue.of("1234.56"), item.estimatedValue)
+    }
+
+    @Test
+    fun `rejects non german decimal separator for item create form`() {
+        val createForm = get("/items/new").body()
+        val categoryId = Regex("""<option value="([^"]+)">Computer &amp; Peripherie</option>""")
+            .find(createForm)
+            ?.groupValues
+            ?.get(1)
+            ?: error("Category option not found.")
+
+        val response = post(
+            "/items",
+            mapOf(
+                "name" to "Invalid-Decimal-Laptop",
+                "categoryId" to categoryId,
+                "estimatedValue" to "999.99",
+                "note" to "",
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "Schätzwert muss im deutschen Zahlenformat angegeben werden.")
+    }
+
+    @Test
     fun `list entries link to item detail page`() {
         val createForm = get("/items/new").body()
         val categoryId = Regex("""<option value="([^"]+)">Computer &amp; Peripherie</option>""")
@@ -197,6 +245,7 @@ class ItemWebControllerTest {
         assertContains(response.body(), "<h1>Detail-Laptop</h1>")
         assertContains(response.body(), "Computer &amp; Peripherie")
         assertContains(response.body(), "Arbeitsgerät")
+        assertContains(response.body(), """href="/items/${item.id.value}/edit"""")
         assertContains(response.body(), "Küche")
         assertContains(response.body(), "intern")
         assertContains(response.body(), "1.000")
@@ -207,8 +256,133 @@ class ItemWebControllerTest {
     }
 
     @Test
+    fun `renders item edit form with current item values`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Edit-Form-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "Arbeitsgerät",
+        )
+
+        val response = get("/items/${item.id.value}/edit")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Gegenstand bearbeiten</h1>")
+        assertContains(response.body(), """value="Edit-Form-Laptop"""")
+        assertContains(response.body(), """value="${category.id.value}"""")
+        assertContains(response.body(), """selected="selected">Computer &amp; Peripherie</option>""")
+        assertContains(response.body(), """value="800,00"""")
+        assertContains(response.body(), "EUR")
+        assertContains(response.body(), "Arbeitsgerät")
+        assertContains(response.body(), "Änderungen speichern")
+    }
+
+    @Test
+    fun `updates item and redirects to detail page`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val newCategory = assertNotNull(categoryRepository.findByNormalizedName("möbel"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Edit-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "Arbeitsgerät",
+        )
+
+        val response = post(
+            "/items/${item.id.value}",
+            mapOf(
+                "name" to "Edit-Schreibtisch",
+                "categoryId" to newCategory.id.value.toString(),
+                "estimatedValue" to "999,99",
+                "note" to "Massivholz",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        assertEquals("/items/${item.id.value}", URI.create(response.headers().firstValue("location").orElseThrow()).path)
+        val updatedItem = assertNotNull(itemRepository.findById(item.id))
+        assertEquals("Edit-Schreibtisch", updatedItem.name.value)
+        assertEquals(newCategory.id, updatedItem.categoryId)
+        assertEquals(MonetaryValue.of("999.99"), updatedItem.estimatedValue)
+        assertEquals("Massivholz", updatedItem.note)
+
+        val detailResponse = get("/items/${item.id.value}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "<h1>Edit-Schreibtisch</h1>")
+        assertContains(detailResponse.body(), "Möbel")
+        assertContains(detailResponse.body(), "999,99 EUR")
+        assertContains(detailResponse.body(), "Massivholz")
+    }
+
+    @Test
+    fun `shows validation errors for invalid item edit form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Invalid-Edit-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}",
+            mapOf(
+                "name" to "",
+                "categoryId" to "not-a-uuid",
+                "estimatedValue" to "-1",
+                "note" to "",
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Gegenstand bearbeiten</h1>")
+        assertContains(response.body(), "Name ist erforderlich.")
+        assertContains(response.body(), "Kategorie ist ungültig.")
+        assertContains(response.body(), "Schätzwert muss 0 oder größer sein.")
+    }
+
+    @Test
+    fun `shows duplicate name error for item edit form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Duplicate-Edit-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.createItem(
+            name = ItemName.of("Duplicate-Edit-Monitor"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("300"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}",
+            mapOf(
+                "name" to "Duplicate-Edit-Monitor",
+                "categoryId" to category.id.value.toString(),
+                "estimatedValue" to "800",
+                "note" to "",
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Gegenstand bearbeiten</h1>")
+        assertContains(response.body(), "Name ist bereits vergeben.")
+    }
+
+    @Test
     fun `returns not found for missing item detail page`() {
         val response = get("/items/${UUID.randomUUID()}")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found for missing item edit page`() {
+        val response = get("/items/${UUID.randomUUID()}/edit")
 
         assertEquals(404, response.statusCode())
     }

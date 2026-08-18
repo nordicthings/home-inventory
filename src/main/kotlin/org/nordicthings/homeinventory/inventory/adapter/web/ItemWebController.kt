@@ -81,6 +81,19 @@ class ItemWebController(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
 
+    @GetMapping("/items/{id}/edit")
+    fun editItem(
+        @PathVariable id: UUID,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            model.addAttribute("page", createEditPageView(id, details.toEditForm()))
+            "items/edit"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
     @PostMapping("/items")
     fun createItem(
         @ModelAttribute form: ItemCreateForm,
@@ -96,7 +109,7 @@ class ItemWebController(
             itemUseCase.createItem(
                 name = ItemName.of(form.name),
                 categoryId = CategoryId(UUID.fromString(form.categoryId)),
-                estimatedValue = MonetaryValue.of(BigDecimal(form.estimatedValue.trim())),
+                estimatedValue = MonetaryValue.of(parseEstimatedValue(form.estimatedValue)),
                 note = form.note.trim(),
             )
             "redirect:/items"
@@ -109,6 +122,42 @@ class ItemWebController(
         } catch (exception: IllegalArgumentException) {
             model.addAttribute("page", createCreatePageView(form, listOf(FormErrorView(null, "Die Eingaben sind ungültig."))))
             "items/new"
+        }
+    }
+
+    @PostMapping("/items/{id}")
+    fun updateItem(
+        @PathVariable id: UUID,
+        @ModelAttribute form: ItemEditForm,
+        model: Model,
+    ): String {
+        val errors = validateEditForm(form)
+        if (errors.isNotEmpty()) {
+            model.addAttribute("page", createEditPageView(id, form, errors))
+            return "items/edit"
+        }
+
+        return try {
+            itemUseCase.updateItem(
+                id = ItemId(id),
+                name = ItemName.of(form.name),
+                categoryId = CategoryId(UUID.fromString(form.categoryId)),
+                estimatedValue = MonetaryValue.of(parseEstimatedValue(form.estimatedValue)),
+                note = form.note.trim(),
+            )
+            "redirect:/items/$id"
+        } catch (exception: DuplicateNameException) {
+            model.addAttribute("page", createEditPageView(id, form, listOf(FormErrorView("name", "Name ist bereits vergeben."))))
+            "items/edit"
+        } catch (exception: EntityNotFoundException) {
+            if (exception.message?.startsWith("Item does not exist") == true) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+            }
+            model.addAttribute("page", createEditPageView(id, form, listOf(FormErrorView("categoryId", "Kategorie wurde nicht gefunden."))))
+            "items/edit"
+        } catch (exception: IllegalArgumentException) {
+            model.addAttribute("page", createEditPageView(id, form, listOf(FormErrorView(null, "Die Eingaben sind ungültig."))))
+            "items/edit"
         }
     }
 
@@ -134,34 +183,69 @@ class ItemWebController(
             items = searchItems(name, categoryId, locationId, sourceId).map { it.toRowView() },
         )
 
+    private fun categoryOptions(): List<SelectOptionView> =
+        getCategoryListUseCase.getCategoryList()
+            .map { SelectOptionView(it.id.value.toString(), it.name.value) }
+
     private fun createCreatePageView(
         form: ItemCreateForm,
         errors: List<FormErrorView> = emptyList(),
     ): ItemCreatePageView =
         ItemCreatePageView(
             form = form,
-            categories = getCategoryListUseCase.getCategoryList()
-                .map { SelectOptionView(it.id.value.toString(), it.name.value) },
+            categories = categoryOptions(),
+            errors = errors,
+        )
+
+    private fun createEditPageView(
+        id: UUID,
+        form: ItemEditForm,
+        errors: List<FormErrorView> = emptyList(),
+    ): ItemEditPageView =
+        ItemEditPageView(
+            id = id.toString(),
+            form = form,
+            categories = categoryOptions(),
             errors = errors,
         )
 
     private fun validateCreateForm(form: ItemCreateForm): List<FormErrorView> =
+        validateItemForm(
+            name = form.name,
+            categoryId = form.categoryId,
+            estimatedValue = form.estimatedValue,
+        )
+
+    private fun validateEditForm(form: ItemEditForm): List<FormErrorView> =
+        validateItemForm(
+            name = form.name,
+            categoryId = form.categoryId,
+            estimatedValue = form.estimatedValue,
+        )
+
+    private fun validateItemForm(
+        name: String,
+        categoryId: String,
+        estimatedValue: String,
+    ): List<FormErrorView> =
         buildList {
-            if (form.name.isBlank()) {
+            if (name.isBlank()) {
                 add(FormErrorView("name", "Name ist erforderlich."))
             }
-            if (form.categoryId.isBlank()) {
+            if (categoryId.isBlank()) {
                 add(FormErrorView("categoryId", "Kategorie ist erforderlich."))
-            } else if (form.categoryId.toUuidOrNull() == null) {
+            } else if (categoryId.toUuidOrNull() == null) {
                 add(FormErrorView("categoryId", "Kategorie ist ungültig."))
             }
-            val estimatedValue = form.estimatedValue.trim()
-            if (estimatedValue.isBlank()) {
+            val estimatedAmount = estimatedValue.trim()
+            if (estimatedAmount.isBlank()) {
                 add(FormErrorView("estimatedValue", "Schätzwert ist erforderlich."))
             } else {
-                val amount = estimatedValue.toBigDecimalOrNull()
-                if (amount == null || amount < BigDecimal.ZERO) {
+                val amount = estimatedAmount.toEstimatedValueOrNull()
+                if (amount == null && estimatedAmount.isNegativeGermanDecimal()) {
                     add(FormErrorView("estimatedValue", "Schätzwert muss 0 oder größer sein."))
+                } else if (amount == null) {
+                    add(FormErrorView("estimatedValue", "Schätzwert muss im deutschen Zahlenformat angegeben werden."))
                 }
             }
         }
@@ -191,5 +275,27 @@ class ItemWebController(
         toUuidOrNull()?.let(::SourceId)
 
     private fun String?.toUuidOrNull(): UUID? =
-        this?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) }
+        this?.takeIf { it.isNotBlank() }?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+    private fun parseEstimatedValue(value: String): BigDecimal =
+        value.trim().toEstimatedValueOrNull()
+            ?: throw IllegalArgumentException("Estimated value is invalid.")
+
+    private fun String.toEstimatedValueOrNull(): BigDecimal? {
+        val normalizedInput = trim()
+        if (!GERMAN_DECIMAL_PATTERN.matches(normalizedInput)) {
+            return null
+        }
+        return normalizedInput
+            .replace(".", "")
+            .replace(',', '.')
+            .toBigDecimalOrNull()
+    }
+
+    private fun String.isNegativeGermanDecimal(): Boolean =
+        startsWith("-") && GERMAN_DECIMAL_PATTERN.matches(drop(1))
+
+    companion object {
+        private val GERMAN_DECIMAL_PATTERN = Regex("""(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?""")
+    }
 }

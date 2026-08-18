@@ -86,6 +86,23 @@ class ItemService(
         )
     }
 
+    override fun updateItem(
+        id: ItemId,
+        name: ItemName,
+        categoryId: CategoryId,
+        estimatedValue: MonetaryValue,
+        note: String,
+    ): Item {
+        val item = findItem(id)
+        ensureUniqueName(name, existingId = id)
+        ensureCategoryExists(categoryId)
+        item.rename(name)
+        item.changeCategory(categoryId)
+        item.changeEstimatedValue(estimatedValue)
+        item.changeNote(note)
+        return itemRepository.save(item)
+    }
+
     override fun renameItem(id: ItemId, name: ItemName): Item {
         val item = findItem(id)
         ensureUniqueName(name, existingId = id)
