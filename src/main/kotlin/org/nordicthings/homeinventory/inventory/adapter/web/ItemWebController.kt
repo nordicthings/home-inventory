@@ -94,6 +94,18 @@ class ItemWebController(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
 
+    @GetMapping("/items/{id}/delete")
+    fun confirmDeleteItem(
+        @PathVariable id: UUID,
+        model: Model,
+    ): String =
+        try {
+            model.addAttribute("page", getItemDetailsUseCase.getItemDetails(ItemId(id)).toDetailPageView())
+            "items/delete"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
     @PostMapping("/items")
     fun createItem(
         @ModelAttribute form: ItemCreateForm,
@@ -160,6 +172,15 @@ class ItemWebController(
             "items/edit"
         }
     }
+
+    @PostMapping("/items/{id}/delete")
+    fun deleteItem(@PathVariable id: UUID): String =
+        try {
+            itemUseCase.deleteItem(ItemId(id))
+            "redirect:/items"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
 
     private fun createPageView(
         name: String?,

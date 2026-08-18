@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gegenstand löschen - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page page--narrow">
+    <div class="page__header">
+        <h1>Gegenstand löschen</h1>
+        <a class="button button--secondary" th:href="@{/items/{id}(id=${page.id})}">Zurück zum Gegenstand</a>
+    </div>
+
+    <section class="confirm-box" aria-labelledby="delete-heading">
+        <h2 id="delete-heading" th:text="${page.name}">Laptop</h2>
+        <p>
+            Dieser Gegenstand wird dauerhaft gelöscht. Dabei werden auch alle erfassten Bestände und Zugänge dieses Gegenstands entfernt.
+        </p>
+
+        <dl class="confirm-details">
+            <div>
+                <dt>Kategorie</dt>
+                <dd th:text="${page.categoryName}">Computer &amp; Peripherie</dd>
+            </div>
+            <div>
+                <dt>Gesamtmenge</dt>
+                <dd th:text="${page.totalQuantity}">2</dd>
+            </div>
+            <div>
+                <dt>Gesamtwert</dt>
+                <dd th:text="${page.totalValue}">1.600,00 EUR</dd>
+            </div>
+        </dl>
+
+        <form class="form__actions" method="post" th:action="@{/items/{id}/delete(id=${page.id})}">
+            <button class="button button--danger" type="submit">Endgültig löschen</button>
+            <a class="button button--secondary" th:href="@{/items/{id}(id=${page.id})}">Abbrechen</a>
+        </form>
+    </section>
+</main>
+</body>
+</html>

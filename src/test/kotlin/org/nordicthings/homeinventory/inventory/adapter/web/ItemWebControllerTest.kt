@@ -246,6 +246,7 @@ class ItemWebControllerTest {
         assertContains(response.body(), "Computer &amp; Peripherie")
         assertContains(response.body(), "Arbeitsgerät")
         assertContains(response.body(), """href="/items/${item.id.value}/edit"""")
+        assertContains(response.body(), """href="/items/${item.id.value}/delete"""")
         assertContains(response.body(), "Küche")
         assertContains(response.body(), "intern")
         assertContains(response.body(), "1.000")
@@ -374,6 +375,48 @@ class ItemWebControllerTest {
     }
 
     @Test
+    fun `renders item delete confirmation page`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Delete-Confirm-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = get("/items/${item.id.value}/delete")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Gegenstand löschen</h1>")
+        assertContains(response.body(), "Delete-Confirm-Laptop")
+        assertContains(response.body(), "Computer &amp; Peripherie")
+        assertContains(response.body(), "Dieser Gegenstand wird dauerhaft gelöscht.")
+        assertContains(response.body(), """action="/items/${item.id.value}/delete"""")
+        assertContains(response.body(), "Endgültig löschen")
+        assertContains(response.body(), "Abbrechen")
+    }
+
+    @Test
+    fun `deletes item and redirects to list`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Delete-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post("/items/${item.id.value}/delete", emptyMap())
+
+        assertEquals(302, response.statusCode())
+        assertEquals("/items", URI.create(response.headers().firstValue("location").orElseThrow()).path)
+        assertEquals(null, itemRepository.findById(item.id))
+
+        val detailResponse = get("/items/${item.id.value}")
+        assertEquals(404, detailResponse.statusCode())
+    }
+
+    @Test
     fun `returns not found for missing item detail page`() {
         val response = get("/items/${UUID.randomUUID()}")
 
@@ -383,6 +426,20 @@ class ItemWebControllerTest {
     @Test
     fun `returns not found for missing item edit page`() {
         val response = get("/items/${UUID.randomUUID()}/edit")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found for missing item delete confirmation page`() {
+        val response = get("/items/${UUID.randomUUID()}/delete")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found when deleting missing item`() {
+        val response = post("/items/${UUID.randomUUID()}/delete", emptyMap())
 
         assertEquals(404, response.statusCode())
     }

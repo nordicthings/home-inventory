@@ -24,6 +24,7 @@
         </div>
         <div class="page__actions">
             <a class="button button--primary" th:href="@{/items/{id}/edit(id=${page.id})}">Bearbeiten</a>
+            <a class="button button--danger" th:href="@{/items/{id}/delete(id=${page.id})}">Löschen</a>
             <a class="button button--secondary" th:href="@{/items}">Zurück zur Liste</a>
         </div>
     </div>
