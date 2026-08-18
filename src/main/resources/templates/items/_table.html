@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div class="table-wrap" th:fragment="itemTable">
+    <table class="data-table">
+        <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Kategorie</th>
+            <th class="number" scope="col">Menge</th>
+            <th class="number" scope="col">Wert</th>
+            <th class="number" scope="col">Gesamt</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${items}">
+            <td>
+                <a class="table-link" th:href="@{/items/{id}(id=${item.id})}" th:text="${item.name}">Laptop</a>
+            </td>
+            <td th:text="${item.categoryName}">Computer &amp; Peripherie</td>
+            <td class="number" th:text="${item.totalQuantity}">2</td>
+            <td class="number" th:text="${item.averageValue}">800.00 EUR</td>
+            <td class="number" th:text="${item.totalValue}">1600.00 EUR</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(items)}">
+            <td class="empty" colspan="5">Keine Gegenstände gefunden</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

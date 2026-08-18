@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+<form class="filters" method="get" th:action="@{/items}" hx-get="/items/table" hx-target="#item-table" hx-push-url="true"
+      th:fragment="itemFilters">
+    <div class="field field--search">
+        <label for="name">Suche</label>
+        <input id="name" name="name" type="search" autocomplete="off" th:value="${page.filter.name}">
+    </div>
+
+    <div class="field">
+        <label for="categoryId">Kategorie</label>
+        <select id="categoryId" name="categoryId">
+            <option value="" th:selected="${page.filter.categoryId == ''}">Alle Kategorien</option>
+            <option th:each="category : ${page.categories}"
+                    th:value="${category.id}"
+                    th:text="${category.label}"
+                    th:selected="${category.id == page.filter.categoryId}"></option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label for="locationId">Ort</label>
+        <select id="locationId" name="locationId">
+            <option value="" th:selected="${page.filter.locationId == ''}">Alle Orte</option>
+            <option th:each="location : ${page.locations}"
+                    th:value="${location.id}"
+                    th:text="${location.label}"
+                    th:selected="${location.id == page.filter.locationId}"></option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label for="sourceId">Bezugsquelle</label>
+        <select id="sourceId" name="sourceId">
+            <option value="" th:selected="${page.filter.sourceId == ''}">Alle Bezugsquellen</option>
+            <option th:each="source : ${page.sources}"
+                    th:value="${source.id}"
+                    th:text="${source.label}"
+                    th:selected="${source.id == page.filter.sourceId}"></option>
+        </select>
+    </div>
+
+    <div class="field field--actions">
+        <button class="button button--secondary" type="submit">Filtern</button>
+    </div>
+</form>
+</body>
+</html>

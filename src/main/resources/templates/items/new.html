@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gegenstand anlegen - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page page--narrow">
+    <div class="page__header">
+        <h1>Gegenstand anlegen</h1>
+        <a class="button button--secondary" th:href="@{/items}">Zurück zur Liste</a>
+    </div>
+
+    <form class="form" method="post" th:action="@{/items}">
+        <div class="form__errors" th:if="${!#lists.isEmpty(page.globalErrors)}">
+            <p th:each="error : ${page.globalErrors}" th:text="${error.message}">Die Eingaben sind ungültig.</p>
+        </div>
+
+        <div class="field">
+            <label for="name">Name</label>
+            <input id="name"
+                   name="name"
+                   type="text"
+                   autocomplete="off"
+                   th:value="${page.form.name}"
+                   th:classappend="${page.errorFor('name') != null} ? 'input--error'">
+            <p class="field-error" th:if="${page.errorFor('name') != null}" th:text="${page.errorFor('name')}">Name ist erforderlich.</p>
+        </div>
+
+        <div class="field">
+            <label for="categoryId">Kategorie</label>
+            <select id="categoryId"
+                    name="categoryId"
+                    th:classappend="${page.errorFor('categoryId') != null} ? 'input--error'">
+                <option value="" th:selected="${page.form.categoryId == ''}">Kategorie auswählen</option>
+                <option th:each="category : ${page.categories}"
+                        th:value="${category.id}"
+                        th:text="${category.label}"
+                        th:selected="${category.id == page.form.categoryId}"></option>
+            </select>
+            <p class="field-error" th:if="${page.errorFor('categoryId') != null}" th:text="${page.errorFor('categoryId')}">Kategorie ist erforderlich.</p>
+        </div>
+
+        <div class="field">
+            <label for="estimatedValue">Schätzwert</label>
+            <input id="estimatedValue"
+                   name="estimatedValue"
+                   type="number"
+                   inputmode="decimal"
+                   min="0"
+                   step="0.01"
+                   th:value="${page.form.estimatedValue}"
+                   th:classappend="${page.errorFor('estimatedValue') != null} ? 'input--error'">
+            <p class="field-error" th:if="${page.errorFor('estimatedValue') != null}" th:text="${page.errorFor('estimatedValue')}">Schätzwert ist erforderlich.</p>
+        </div>
+
+        <div class="field">
+            <label for="note">Notiz</label>
+            <textarea id="note" name="note" rows="5" th:text="${page.form.note}"></textarea>
+        </div>
+
+        <div class="form__actions">
+            <button class="button button--primary" type="submit">Gegenstand speichern</button>
+            <a class="button button--secondary" th:href="@{/items}">Abbrechen</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>
