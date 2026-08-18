@@ -20,6 +20,7 @@ data class ItemDetailPageView(
 )
 
 data class ItemLocationQuantityView(
+    val locationId: String,
     val locationName: String,
     val locationType: String,
     val quantity: String,
@@ -48,6 +49,7 @@ fun ItemDetails.toDetailPageView(): ItemDetailPageView =
 
 private fun ItemLocationQuantityDetails.toLocationQuantityView(): ItemLocationQuantityView =
     ItemLocationQuantityView(
+        locationId = locationId.value.toString(),
         locationName = locationName.value,
         locationType = locationType.toViewLabel(),
         quantity = quantity.value.formatIntegerForView(),

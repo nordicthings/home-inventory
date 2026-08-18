@@ -103,7 +103,7 @@ class ItemWebControllerTest {
             mapOf(
                 "name" to "",
                 "categoryId" to "",
-                "estimatedValue" to "-1",
+                "estimatedValue" to "",
                 "note" to "",
             ),
         )
@@ -111,6 +111,28 @@ class ItemWebControllerTest {
         assertEquals(200, response.statusCode())
         assertContains(response.body(), "Name ist erforderlich.")
         assertContains(response.body(), "Kategorie ist erforderlich.")
+    }
+
+    @Test
+    fun `shows validation error for negative estimated value on item create form`() {
+        val createForm = get("/items/new").body()
+        val categoryId = Regex("""<option value="([^"]+)">Computer &amp; Peripherie</option>""")
+            .find(createForm)
+            ?.groupValues
+            ?.get(1)
+            ?: error("Category option not found.")
+
+        val response = post(
+            "/items",
+            mapOf(
+                "name" to "Negative-Value-Laptop",
+                "categoryId" to categoryId,
+                "estimatedValue" to "-1",
+                "note" to "",
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
         assertContains(response.body(), "Schätzwert muss 0 oder größer sein.")
     }
 
@@ -144,6 +166,30 @@ class ItemWebControllerTest {
         assertContains(listResponse.body(), "Computer &amp; Peripherie")
         assertContains(listResponse.body(), "0")
         assertContains(listResponse.body(), "800,00 EUR")
+    }
+
+    @Test
+    fun `creates item with unknown estimated value when value is blank`() {
+        val createForm = get("/items/new").body()
+        val categoryId = Regex("""<option value="([^"]+)">Computer &amp; Peripherie</option>""")
+            .find(createForm)
+            ?.groupValues
+            ?.get(1)
+            ?: error("Category option not found.")
+
+        val response = post(
+            "/items",
+            mapOf(
+                "name" to "Blank-Estimated-Value-Laptop",
+                "categoryId" to categoryId,
+                "estimatedValue" to "",
+                "note" to "",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        val item = assertNotNull(itemRepository.findByNormalizedName("blank-estimated-value-laptop"))
+        assertEquals(MonetaryValue.unknown(), item.estimatedValue)
     }
 
     @Test
@@ -247,6 +293,7 @@ class ItemWebControllerTest {
         assertContains(response.body(), "Arbeitsgerät")
         assertContains(response.body(), """href="/items/${item.id.value}/edit"""")
         assertContains(response.body(), """href="/items/${item.id.value}/delete"""")
+        assertContains(response.body(), """href="/items/${item.id.value}/locations/edit"""")
         assertContains(response.body(), "Küche")
         assertContains(response.body(), "intern")
         assertContains(response.body(), "1.000")
@@ -344,6 +391,30 @@ class ItemWebControllerTest {
     }
 
     @Test
+    fun `updates item with unknown estimated value when value is blank`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Blank-Edit-Estimated-Value-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}",
+            mapOf(
+                "name" to "Blank-Edit-Estimated-Value-Laptop",
+                "categoryId" to category.id.value.toString(),
+                "estimatedValue" to "",
+                "note" to "",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        assertEquals(MonetaryValue.unknown(), itemRepository.findById(item.id)?.estimatedValue)
+    }
+
+    @Test
     fun `shows duplicate name error for item edit form`() {
         val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
         val item = itemUseCase.createItem(
@@ -372,6 +443,175 @@ class ItemWebControllerTest {
         assertEquals(200, response.statusCode())
         assertContains(response.body(), "<h1>Gegenstand bearbeiten</h1>")
         assertContains(response.body(), "Name ist bereits vergeben.")
+    }
+
+    @Test
+    fun `renders item location quantity form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Location-Form-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = get("/items/${item.id.value}/locations/edit")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Bestand erfassen</h1>")
+        assertContains(response.body(), "Location-Form-Laptop")
+        assertContains(response.body(), "Ort auswählen")
+        assertContains(response.body(), "Küche")
+        assertContains(response.body(), "Menge")
+        assertContains(response.body(), "Bestand speichern")
+        assertContains(response.body(), """action="/items/${item.id.value}/locations"""")
+    }
+
+    @Test
+    fun `sets item location quantity and redirects to detail page`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Location-Quantity-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}/locations",
+            mapOf(
+                "locationId" to kitchen.id.value.toString(),
+                "quantity" to "1.000",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        assertEquals("/items/${item.id.value}", URI.create(response.headers().firstValue("location").orElseThrow()).path)
+        assertEquals(Quantity.of(1000), itemRepository.findById(item.id)?.locationQuantities?.get(kitchen.id))
+
+        val detailResponse = get("/items/${item.id.value}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "Küche")
+        assertContains(detailResponse.body(), "1.000")
+        assertContains(detailResponse.body(), """href="/items/${item.id.value}/locations/${kitchen.id.value}/edit"""")
+        assertContains(detailResponse.body(), """action="/items/${item.id.value}/locations/${kitchen.id.value}/delete"""")
+    }
+
+    @Test
+    fun `replaces existing item location quantity`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Location-Replace-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(2))
+
+        val response = post(
+            "/items/${item.id.value}/locations",
+            mapOf(
+                "locationId" to kitchen.id.value.toString(),
+                "quantity" to "5",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        assertEquals(Quantity.of(5), itemRepository.findById(item.id)?.locationQuantities?.get(kitchen.id))
+    }
+
+    @Test
+    fun `renders existing item location quantity form with current values`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Existing-Location-Quantity-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(1000))
+
+        val response = get("/items/${item.id.value}/locations/${kitchen.id.value}/edit")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Bestand erfassen</h1>")
+        assertContains(response.body(), "Existing-Location-Quantity-Laptop")
+        assertContains(response.body(), """value="${kitchen.id.value}"""")
+        assertContains(response.body(), """selected="selected">Küche</option>""")
+        assertContains(response.body(), """value="1.000"""")
+    }
+
+    @Test
+    fun `deletes existing item location quantity`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Location-Delete-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(2))
+
+        val response = post("/items/${item.id.value}/locations/${kitchen.id.value}/delete", emptyMap())
+
+        assertEquals(302, response.statusCode())
+        assertEquals("/items/${item.id.value}", URI.create(response.headers().firstValue("location").orElseThrow()).path)
+        assertEquals(null, itemRepository.findById(item.id)?.locationQuantities?.get(kitchen.id))
+
+        val detailResponse = get("/items/${item.id.value}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "Keine Bestände erfasst")
+    }
+
+    @Test
+    fun `shows validation errors for invalid item location quantity form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Invalid-Location-Quantity-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}/locations",
+            mapOf(
+                "locationId" to "not-a-uuid",
+                "quantity" to "0",
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Bestand erfassen</h1>")
+        assertContains(response.body(), "Ort ist ungültig.")
+        assertContains(response.body(), "Menge muss eine positive ganze Zahl sein.")
+    }
+
+    @Test
+    fun `shows missing location error for item location quantity form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Missing-Location-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}/locations",
+            mapOf(
+                "locationId" to UUID.randomUUID().toString(),
+                "quantity" to "1",
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Bestand erfassen</h1>")
+        assertContains(response.body(), "Ort wurde nicht gefunden.")
     }
 
     @Test
@@ -426,6 +666,59 @@ class ItemWebControllerTest {
     @Test
     fun `returns not found for missing item edit page`() {
         val response = get("/items/${UUID.randomUUID()}/edit")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found for missing item location quantity form`() {
+        val response = get("/items/${UUID.randomUUID()}/locations/edit")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found for missing existing item location quantity form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Missing-Existing-Location-Form-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = get("/items/${item.id.value}/locations/${kitchen.id.value}/edit")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found when setting location quantity for missing item`() {
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val response = post(
+            "/items/${UUID.randomUUID()}/locations",
+            mapOf(
+                "locationId" to kitchen.id.value.toString(),
+                "quantity" to "1",
+            ),
+        )
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found when deleting missing item location quantity`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Missing-Location-Delete-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post("/items/${item.id.value}/locations/${kitchen.id.value}/delete", emptyMap())
 
         assertEquals(404, response.statusCode())
     }

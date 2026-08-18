@@ -24,6 +24,15 @@ Noch nicht enthalten:
 - Genaue Position am Ort
 - Mobiler oder externer Zugriff
 
+## Version 2
+
+Für Version 2 vorgemerkt:
+
+- Numerische Eingabefelder sollen falsche Zeichen möglichst bereits während der Eingabe verhindern.
+- Geldwerte sollen clientseitig nur im deutschen Zahlenformat erfasst werden können, z. B. `1.234,56`.
+- Ganzzahlige Mengen sollen clientseitig nur als positive ganze Zahlen mit optionalem deutschem Tausenderpunkt erfasst werden können, z. B. `1.000`.
+- Serverseitige Validierung bleibt unabhängig davon weiterhin verbindlich.
+
 ## Felder
 
 Jeder Gegenstand hat diese Felder:
@@ -33,7 +42,7 @@ Jeder Gegenstand hat diese Felder:
 - Schätzwert
 - Freie Notiz
 
-Name, Kategorie und Schätzwert sind Pflichtfelder. Der Schätzwert darf 0 sein. Die Notiz ist optional.
+Name und Kategorie sind Pflichtfelder. Der Schätzwert ist optional. Wenn kein Schätzwert erfasst wird, wird 0 verwendet. Die Notiz ist optional.
 
 Jeder Gegenstand hat eine interne eindeutige ID. IDs werden in der Domäne grundsätzlich als UUID modelliert.
 
@@ -227,7 +236,7 @@ Initiale Orte, Kategorien und Bezugsquellen werden über ein Liquibase- oder SQL
 
 ### Gegenstand anlegen
 
-Ein Gegenstand wird mit den zentralen Attributen Name, Kategorie und Schätzwert angelegt. Die Notiz ist optional.
+Ein Gegenstand wird mit den zentralen Attributen Name und Kategorie angelegt. Der Schätzwert und die Notiz sind optional.
 
 Beim Anlegen muss eine existierende Kategorie ausgewählt werden.
 

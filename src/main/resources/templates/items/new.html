@@ -64,7 +64,7 @@
                        th:value="${page.form.estimatedValue}">
                 <span class="money-input__currency">EUR</span>
             </div>
-            <p class="field-error" th:if="${page.errorFor('estimatedValue') != null}" th:text="${page.errorFor('estimatedValue')}">Schätzwert ist erforderlich.</p>
+            <p class="field-error" th:if="${page.errorFor('estimatedValue') != null}" th:text="${page.errorFor('estimatedValue')}">Schätzwert ist ungültig.</p>
         </div>
 
         <div class="field">

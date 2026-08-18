@@ -14,6 +14,7 @@ import org.nordicthings.homeinventory.inventory.domain.ItemId
 import org.nordicthings.homeinventory.inventory.domain.ItemName
 import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
+import org.nordicthings.homeinventory.inventory.domain.Quantity
 import org.nordicthings.homeinventory.inventory.domain.SourceId
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Controller
@@ -106,6 +107,45 @@ class ItemWebController(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
 
+    @GetMapping("/items/{id}/locations/edit")
+    fun editItemLocationQuantity(
+        @PathVariable id: UUID,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            model.addAttribute("page", createLocationQuantityPageView(details.id.value, details.name.value, ItemLocationQuantityForm()))
+            "items/location-quantity"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
+    @GetMapping("/items/{id}/locations/{locationId}/edit")
+    fun editExistingItemLocationQuantity(
+        @PathVariable id: UUID,
+        @PathVariable locationId: UUID,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            val locationQuantity = details.locationQuantities.firstOrNull { it.locationId.value == locationId }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Bestand wurde nicht gefunden.")
+            model.addAttribute(
+                "page",
+                createLocationQuantityPageView(
+                    itemId = details.id.value,
+                    itemName = details.name.value,
+                    form = ItemLocationQuantityForm(
+                        locationId = locationQuantity.locationId.value.toString(),
+                        quantity = locationQuantity.quantity.value.formatIntegerForView(),
+                    ),
+                ),
+            )
+            "items/location-quantity"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
     @PostMapping("/items")
     fun createItem(
         @ModelAttribute form: ItemCreateForm,
@@ -182,6 +222,54 @@ class ItemWebController(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
 
+    @PostMapping("/items/{id}/locations")
+    fun setItemLocationQuantity(
+        @PathVariable id: UUID,
+        @ModelAttribute form: ItemLocationQuantityForm,
+        model: Model,
+    ): String {
+        val errors = validateLocationQuantityForm(form)
+        if (errors.isNotEmpty()) {
+            return renderLocationQuantityForm(id, form, errors, model)
+        }
+
+        return try {
+            itemUseCase.setLocationQuantity(
+                id = ItemId(id),
+                locationId = LocationId(UUID.fromString(form.locationId)),
+                quantity = Quantity.of(parseQuantity(form.quantity)),
+            )
+            "redirect:/items/$id"
+        } catch (exception: EntityNotFoundException) {
+            if (exception.message?.startsWith("Item does not exist") == true) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+            }
+            renderLocationQuantityForm(id, form, listOf(FormErrorView("locationId", "Ort wurde nicht gefunden.")), model)
+        } catch (exception: IllegalArgumentException) {
+            renderLocationQuantityForm(id, form, listOf(FormErrorView(null, "Die Eingaben sind ungültig.")), model)
+        }
+    }
+
+    @PostMapping("/items/{id}/locations/{locationId}/delete")
+    fun deleteItemLocationQuantity(
+        @PathVariable id: UUID,
+        @PathVariable locationId: UUID,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            if (details.locationQuantities.none { it.locationId.value == locationId }) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Bestand wurde nicht gefunden.")
+            }
+            itemUseCase.setLocationQuantity(
+                id = ItemId(id),
+                locationId = LocationId(locationId),
+                quantity = Quantity.ZERO,
+            )
+            "redirect:/items/$id"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
     private fun createPageView(
         name: String?,
         categoryId: String?,
@@ -208,6 +296,10 @@ class ItemWebController(
         getCategoryListUseCase.getCategoryList()
             .map { SelectOptionView(it.id.value.toString(), it.name.value) }
 
+    private fun locationOptions(): List<SelectOptionView> =
+        getLocationListUseCase.getLocationList()
+            .map { SelectOptionView(it.id.value.toString(), it.name.value) }
+
     private fun createCreatePageView(
         form: ItemCreateForm,
         errors: List<FormErrorView> = emptyList(),
@@ -230,6 +322,34 @@ class ItemWebController(
             errors = errors,
         )
 
+    private fun createLocationQuantityPageView(
+        itemId: UUID,
+        itemName: String,
+        form: ItemLocationQuantityForm,
+        errors: List<FormErrorView> = emptyList(),
+    ): ItemLocationQuantityPageView =
+        ItemLocationQuantityPageView(
+            itemId = itemId.toString(),
+            itemName = itemName,
+            form = form,
+            locations = locationOptions(),
+            errors = errors,
+        )
+
+    private fun renderLocationQuantityForm(
+        id: UUID,
+        form: ItemLocationQuantityForm,
+        errors: List<FormErrorView>,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            model.addAttribute("page", createLocationQuantityPageView(id, details.name.value, form, errors))
+            "items/location-quantity"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
     private fun validateCreateForm(form: ItemCreateForm): List<FormErrorView> =
         validateItemForm(
             name = form.name,
@@ -243,6 +363,25 @@ class ItemWebController(
             categoryId = form.categoryId,
             estimatedValue = form.estimatedValue,
         )
+
+    private fun validateLocationQuantityForm(form: ItemLocationQuantityForm): List<FormErrorView> =
+        buildList {
+            if (form.locationId.isBlank()) {
+                add(FormErrorView("locationId", "Ort ist erforderlich."))
+            } else if (form.locationId.toUuidOrNull() == null) {
+                add(FormErrorView("locationId", "Ort ist ungültig."))
+            }
+
+            val quantity = form.quantity.trim()
+            if (quantity.isBlank()) {
+                add(FormErrorView("quantity", "Menge ist erforderlich."))
+            } else {
+                val amount = quantity.toQuantityIntOrNull()
+                if (amount == null || amount <= 0) {
+                    add(FormErrorView("quantity", "Menge muss eine positive ganze Zahl sein."))
+                }
+            }
+        }
 
     private fun validateItemForm(
         name: String,
@@ -259,9 +398,7 @@ class ItemWebController(
                 add(FormErrorView("categoryId", "Kategorie ist ungültig."))
             }
             val estimatedAmount = estimatedValue.trim()
-            if (estimatedAmount.isBlank()) {
-                add(FormErrorView("estimatedValue", "Schätzwert ist erforderlich."))
-            } else {
+            if (estimatedAmount.isNotBlank()) {
                 val amount = estimatedAmount.toEstimatedValueOrNull()
                 if (amount == null && estimatedAmount.isNegativeGermanDecimal()) {
                     add(FormErrorView("estimatedValue", "Schätzwert muss 0 oder größer sein."))
@@ -298,9 +435,14 @@ class ItemWebController(
     private fun String?.toUuidOrNull(): UUID? =
         this?.takeIf { it.isNotBlank() }?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
-    private fun parseEstimatedValue(value: String): BigDecimal =
-        value.trim().toEstimatedValueOrNull()
+    private fun parseEstimatedValue(value: String): BigDecimal {
+        val normalizedInput = value.trim()
+        if (normalizedInput.isBlank()) {
+            return BigDecimal.ZERO
+        }
+        return normalizedInput.toEstimatedValueOrNull()
             ?: throw IllegalArgumentException("Estimated value is invalid.")
+    }
 
     private fun String.toEstimatedValueOrNull(): BigDecimal? {
         val normalizedInput = trim()
@@ -316,7 +458,20 @@ class ItemWebController(
     private fun String.isNegativeGermanDecimal(): Boolean =
         startsWith("-") && GERMAN_DECIMAL_PATTERN.matches(drop(1))
 
+    private fun parseQuantity(value: String): Int =
+        value.trim().toQuantityIntOrNull()
+            ?: throw IllegalArgumentException("Quantity is invalid.")
+
+    private fun String.toQuantityIntOrNull(): Int? {
+        val normalizedInput = trim()
+        if (!GERMAN_INTEGER_PATTERN.matches(normalizedInput)) {
+            return null
+        }
+        return normalizedInput.replace(".", "").toIntOrNull()
+    }
+
     companion object {
         private val GERMAN_DECIMAL_PATTERN = Regex("""(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?""")
+        private val GERMAN_INTEGER_PATTERN = Regex("""(?:\d+|\d{1,3}(?:\.\d{3})+)""")
     }
 }

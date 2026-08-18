@@ -438,6 +438,35 @@ h2 {
     text-decoration: underline;
 }
 
+.row-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.row-actions form {
+    margin: 0;
+}
+
+.link-button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--primary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.link-button:hover {
+    text-decoration: underline;
+}
+
+.link-button--danger {
+    color: var(--danger);
+}
+
 .empty {
     color: var(--muted);
     text-align: center;

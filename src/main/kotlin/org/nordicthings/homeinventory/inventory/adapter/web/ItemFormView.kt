@@ -16,6 +16,11 @@ data class ItemEditForm(
     var note: String = "",
 )
 
+data class ItemLocationQuantityForm(
+    var locationId: String = "",
+    var quantity: String = "",
+)
+
 data class ItemCreatePageView(
     val form: ItemCreateForm,
     val categories: List<SelectOptionView>,
@@ -32,6 +37,20 @@ data class ItemEditPageView(
     val id: String,
     val form: ItemEditForm,
     val categories: List<SelectOptionView>,
+    val errors: List<FormErrorView> = emptyList(),
+) {
+    val globalErrors: List<FormErrorView>
+        get() = errors.filter { it.field == null }
+
+    fun errorFor(field: String): String? =
+        errors.firstOrNull { it.field == field }?.message
+}
+
+data class ItemLocationQuantityPageView(
+    val itemId: String,
+    val itemName: String,
+    val form: ItemLocationQuantityForm,
+    val locations: List<SelectOptionView>,
     val errors: List<FormErrorView> = emptyList(),
 ) {
     val globalErrors: List<FormErrorView>
