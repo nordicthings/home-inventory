@@ -4,27 +4,33 @@ import org.nordicthings.homeinventory.inventory.application.DuplicateNameExcepti
 import org.nordicthings.homeinventory.inventory.application.EntityNotFoundException
 import org.nordicthings.homeinventory.inventory.application.SearchItemsFilter
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetCategoryListUseCase
+import org.nordicthings.homeinventory.inventory.application.port.inbound.GetItemDetailsUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetLocationListUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetSourceListUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.ItemUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.SearchItemsUseCase
 import org.nordicthings.homeinventory.inventory.domain.CategoryId
+import org.nordicthings.homeinventory.inventory.domain.ItemId
 import org.nordicthings.homeinventory.inventory.domain.ItemName
 import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import org.nordicthings.homeinventory.inventory.domain.SourceId
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.server.ResponseStatusException
 import java.math.BigDecimal
 import java.util.UUID
 
 @Controller
 class ItemWebController(
     private val searchItemsUseCase: SearchItemsUseCase,
+    private val getItemDetailsUseCase: GetItemDetailsUseCase,
     private val itemUseCase: ItemUseCase,
     private val getCategoryListUseCase: GetCategoryListUseCase,
     private val getLocationListUseCase: GetLocationListUseCase,
@@ -62,6 +68,18 @@ class ItemWebController(
         model.addAttribute("page", createCreatePageView(ItemCreateForm()))
         return "items/new"
     }
+
+    @GetMapping("/items/{id}")
+    fun itemDetails(
+        @PathVariable id: UUID,
+        model: Model,
+    ): String =
+        try {
+            model.addAttribute("page", getItemDetailsUseCase.getItemDetails(ItemId(id)).toDetailPageView())
+            "items/detail"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
 
     @PostMapping("/items")
     fun createItem(

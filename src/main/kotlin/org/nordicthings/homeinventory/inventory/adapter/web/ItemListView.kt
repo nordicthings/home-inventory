@@ -3,6 +3,8 @@ package org.nordicthings.homeinventory.inventory.adapter.web
 import org.nordicthings.homeinventory.inventory.application.ItemListEntry
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import java.math.RoundingMode
+import java.text.NumberFormat
+import java.util.Locale
 
 data class ItemListPageView(
     val filter: ItemFilterView,
@@ -38,12 +40,25 @@ fun ItemListEntry.toRowView(): ItemListRowView =
         id = id.value.toString(),
         name = name.value,
         categoryName = categoryName.value,
-        totalQuantity = totalQuantity.value.toString(),
+        totalQuantity = totalQuantity.value.formatIntegerForView(),
         averageValue = averageValue.formatForView(),
         totalValue = totalValue.formatForView(),
     )
 
 fun MonetaryValue?.formatForView(): String =
     this?.let {
-        "${it.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()} ${it.currency.currencyCode}"
+        "${it.amount.setScale(2, RoundingMode.HALF_UP).formatDecimalForView()} ${it.currency.currencyCode}"
     } ?: "unbekannt"
+
+fun Int.formatIntegerForView(): String =
+    NumberFormat.getIntegerInstance(Locale.GERMANY).format(this)
+
+private fun Number.formatDecimalForView(): String =
+    NumberFormat.getNumberInstance(Locale.GERMANY)
+        .apply {
+            isGroupingUsed = true
+            minimumFractionDigits = 2
+            maximumFractionDigits = 2
+            roundingMode = RoundingMode.HALF_UP
+        }
+        .format(this)

@@ -31,6 +31,7 @@ Die fachlichen Anforderungen stehen in `docs/requirements.md` und sind bei Umset
 - Docker Compose soll den Betrieb gegen eine PostgreSQL-Datenbank ermöglichen
 - Die Konfiguration soll über Spring-Profile getrennt werden, z. B. H2 für schnelle Entwicklung und PostgreSQL für containerisierten Betrieb
 - Liquibase-Migrationen müssen in beiden lokalen Betriebsarten laufen
+- Codex darf während der Bearbeitung einen Dev-Server starten, wenn das für UI-Prüfungen notwendig ist. Nach abgeschlossenem Arbeitsschritt startet Codex keinen Übergabe-Server, sondern nennt den passenden Startbefehl, damit der Nutzer den Dev-Server selbst kontrolliert.
 
 ## Architekturstil
 

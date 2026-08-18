@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${page.name + ' - Nordic Things'}">Gegenstand - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page">
+    <div class="page__header">
+        <div>
+            <p class="eyebrow">Gegenstand</p>
+            <h1 th:text="${page.name}">Laptop</h1>
+        </div>
+        <a class="button button--secondary" th:href="@{/items}">Zurück zur Liste</a>
+    </div>
+
+    <section class="detail-summary" aria-label="Gegenstandsdaten">
+        <dl class="detail-grid">
+            <div>
+                <dt>Kategorie</dt>
+                <dd th:text="${page.categoryName}">Computer &amp; Peripherie</dd>
+            </div>
+            <div>
+                <dt>Schätzwert</dt>
+                <dd th:text="${page.estimatedValue}">800.00 EUR</dd>
+            </div>
+            <div>
+                <dt>Gesamtmenge</dt>
+                <dd th:text="${page.totalQuantity}">2</dd>
+            </div>
+            <div>
+                <dt>Durchschnittswert</dt>
+                <dd th:text="${page.averageValue}">800.00 EUR</dd>
+            </div>
+            <div>
+                <dt>Gesamtwert</dt>
+                <dd th:text="${page.totalValue}">1600.00 EUR</dd>
+            </div>
+        </dl>
+
+        <div class="note-block" th:if="${!#strings.isEmpty(page.note)}">
+            <h2>Notiz</h2>
+            <p th:text="${page.note}">Arbeitsgerät</p>
+        </div>
+    </section>
+
+    <section class="detail-section" aria-labelledby="locations-heading">
+        <div class="section-header">
+            <h2 id="locations-heading">Bestände</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table data-table--compact">
+                <thead>
+                <tr>
+                    <th scope="col">Ort</th>
+                    <th scope="col">Typ</th>
+                    <th class="number" scope="col">Menge</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="locationQuantity : ${page.locationQuantities}">
+                    <td th:text="${locationQuantity.locationName}">Küche</td>
+                    <td th:text="${locationQuantity.locationType}">intern</td>
+                    <td class="number" th:text="${locationQuantity.quantity}">1</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(page.locationQuantities)}">
+                    <td class="empty" colspan="3">Keine Bestände erfasst</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="detail-section" aria-labelledby="acquisitions-heading">
+        <div class="section-header">
+            <h2 id="acquisitions-heading">Zugänge</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table data-table--compact">
+                <thead>
+                <tr>
+                    <th scope="col">Bezugsquelle</th>
+                    <th class="number" scope="col">Menge</th>
+                    <th class="number" scope="col">Kaufpreis</th>
+                    <th scope="col">Kaufdatum</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="acquisition : ${page.acquisitions}">
+                    <td th:text="${acquisition.sourceName}">Amazon</td>
+                    <td class="number" th:text="${acquisition.quantity}">1</td>
+                    <td class="number" th:text="${acquisition.purchasePrice}">800.00 EUR</td>
+                    <td th:text="${acquisition.purchaseDate}">03.01.2026</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(page.acquisitions)}">
+                    <td class="empty" colspan="4">Keine Zugänge erfasst</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>
