@@ -10,7 +10,7 @@ Version 1 läuft lokal auf Jens' Rechner als Web-App.
 
 Enthalten:
 
-- Gegenstände per Formular anlegen
+- Gegenstände per Formular hinzufügen
 - Einträge bearbeiten
 - Einträge nach Bestätigung löschen
 - Durchsuchbare Liste
@@ -232,23 +232,17 @@ Initiale Orte, Kategorien und Bezugsquellen werden über ein Liquibase- oder SQL
 
 ## Use Cases
 
-### Gegenstand anlegen
+### Gegenstand hinzufügen
 
-Ein Gegenstand wird mit den zentralen Attributen Name und Kategorie angelegt. Der Schätzwert und die Notiz sind optional.
+Ein Gegenstand wird mit den zentralen Attributen Name und Kategorie hinzugefügt. Der Schätzwert und die Notiz sind optional.
 
-Beim Anlegen muss eine existierende Kategorie ausgewählt werden.
+Beim Hinzufügen muss eine existierende Kategorie ausgewählt werden.
 
-Beim Anlegen muss der normalisierte Gegenstandsname eindeutig sein.
+Beim Hinzufügen muss der normalisierte Gegenstandsname eindeutig sein.
 
-Für eine effiziente Erfassung kann beim Anlegen optional direkt ein Zugang und/oder ein Ortsbestand miterfasst werden.
+Nach dem Hinzufügen wird der Benutzer auf die Detailseite des Gegenstands geleitet, damit dort direkt Ortsbestände und Zugänge gepflegt werden können.
 
-Wenn beim Anlegen ein Ortsbestand miterfasst wird, müssen Ort und Menge angegeben werden. Die Menge muss größer als 0 sein.
-
-Wenn beim Anlegen ein Zugang miterfasst wird, gelten dieselben Regeln wie beim separaten Erfassen eines Zugangs.
-
-Wenn beim Anlegen Ortsbestand und Zugang miterfasst werden und die Gesamtmenge der Zugänge die aktuelle Gesamtmenge an Orten übersteigt, wird der Benutzer darauf hingewiesen.
-
-Ein Zugang beim Anlegen ist optional. Viele Gegenstände werden insbesondere bei der initialen Inventarisierung ohne Zugang erfasst, wenn ihre Bezugsquelle nicht mehr bekannt ist.
+Viele Gegenstände werden insbesondere bei der initialen Inventarisierung ohne Zugang erfasst, wenn ihre Bezugsquelle nicht mehr bekannt ist.
 
 Ein Zugang ohne Bezugsquelle ist nicht erlaubt.
 
@@ -350,29 +344,29 @@ Wenn durch das Löschen eines Zugangs keine Zugänge mehr existieren, aber noch 
 
 Orte, Bezugsquellen und Kategorien können angelegt, bearbeitet und gelöscht werden.
 
-Beim Anlegen eines Orts sind Name und Ortstyp Pflichtfelder.
+Beim Hinzufügen eines Orts sind Name und Ortstyp Pflichtfelder.
 
 Beim Bearbeiten eines Orts können Name und Ortstyp geändert werden.
 
-Beim Anlegen oder Umbenennen eines Orts muss der normalisierte Ortsname eindeutig sein.
+Beim Hinzufügen oder Umbenennen eines Orts muss der normalisierte Ortsname eindeutig sein.
 
 Ein Ort kann nur gelöscht werden, wenn keine Ortszuordnung mehr existiert.
 
 Die initial angelegten Orte unterscheiden sich fachlich nicht von später manuell angelegten Orten.
 
-Beim Anlegen einer Kategorie ist der Name Pflichtfeld.
+Beim Hinzufügen einer Kategorie ist der Name Pflichtfeld.
 
 Kategorien können umbenannt werden. Die Zuordnung bestehender Gegenstände bleibt erhalten.
 
-Beim Anlegen oder Umbenennen einer Kategorie muss der normalisierte Kategoriename eindeutig sein.
+Beim Hinzufügen oder Umbenennen einer Kategorie muss der normalisierte Kategoriename eindeutig sein.
 
 Eine Kategorie kann nur gelöscht werden, wenn kein Gegenstand dieser Kategorie zugeordnet ist.
 
-Beim Anlegen einer Bezugsquelle ist der Name Pflichtfeld. Details sind optional.
+Beim Hinzufügen einer Bezugsquelle ist der Name Pflichtfeld. Details sind optional.
 
 Beim Bearbeiten einer Bezugsquelle können Name und Details geändert werden.
 
-Beim Anlegen oder Umbenennen einer Bezugsquelle muss der normalisierte Bezugsquellenname eindeutig sein.
+Beim Hinzufügen oder Umbenennen einer Bezugsquelle muss der normalisierte Bezugsquellenname eindeutig sein.
 
 Eine Bezugsquelle kann nur gelöscht werden, wenn keine Gegenstand-Bezugsquelle-Zuordnung existiert.
 
@@ -432,7 +426,7 @@ Fachliche Fehler werden unterscheidbar modelliert.
 
 Folgende fachliche Fehler sind für Version 1 relevant:
 
-- Name bereits vergeben: Beim Anlegen oder Umbenennen von Gegenstand, Ort, Kategorie oder Bezugsquelle existiert der normalisierte Name bereits.
+- Name bereits vergeben: Beim Hinzufügen oder Umbenennen von Gegenstand, Ort, Kategorie oder Bezugsquelle existiert der normalisierte Name bereits.
 - Menge zu groß: Eine Umlagerung überschreitet die aktuelle Menge am Quellort.
 - Ungültige Menge: Eine Menge verletzt die fachlichen Regeln, z. B. Zugang 0, neuer Ortsbestand 0 oder negative Menge.
 - Stammdatensatz wird noch verwendet: Ort, Kategorie oder Bezugsquelle soll gelöscht werden, wird aber noch verwendet.
@@ -454,7 +448,7 @@ Die Use Cases werden in der Anwendung einheitlich mit verb-orientierten englisch
 
 Für Version 1 sind folgende Use Cases vorgesehen:
 
-- `CreateItem`: Gegenstand anlegen, optional mit initialem Ortsbestand und/oder initialem Zugang.
+- `CreateItem`: Gegenstand hinzufügen.
 - `UpdateItem`: Name, Kategorie, Schätzwert und Notiz eines Gegenstands ändern.
 - `DeleteItem`: Gegenstand inklusive Zuordnungen löschen.
 - `GetItemDetails`: Detailansicht eines Gegenstands mit Ortsbeständen und Zugängen laden.
@@ -464,13 +458,13 @@ Für Version 1 sind folgende Use Cases vorgesehen:
 - `AddItemAcquisition`: Zugang eines Gegenstands erfassen.
 - `UpdateItemAcquisition`: Zugang eines Gegenstands bearbeiten.
 - `DeleteItemAcquisition`: Zugang eines Gegenstands löschen.
-- `CreateLocation`: Ort anlegen.
+- `CreateLocation`: Ort hinzufügen.
 - `UpdateLocation`: Ort bearbeiten.
 - `DeleteLocation`: Ort löschen.
-- `CreateCategory`: Kategorie anlegen.
+- `CreateCategory`: Kategorie hinzufügen.
 - `UpdateCategory`: Kategorie bearbeiten.
 - `DeleteCategory`: Kategorie löschen.
-- `CreateSource`: Bezugsquelle anlegen.
+- `CreateSource`: Bezugsquelle hinzufügen.
 - `UpdateSource`: Bezugsquelle bearbeiten.
 - `DeleteSource`: Bezugsquelle löschen.
 - `GetLocationList`: Orte alphabetisch sortiert laden.
@@ -512,7 +506,7 @@ Domänenobjekte werden im Code englisch benannt. Die Anwendungsoberfläche bleib
 | Bezugsquellen-ID | Source ID | Interne eindeutige ID einer Bezugsquelle. |
 | Bezugsquellenname | Source Name | Fachlich eindeutiger Name einer Bezugsquelle. Die Eindeutigkeit ist unabhängig von Groß- und Kleinschreibung und wird später im Application-Ring über den normalisierten Namen durchgesetzt. |
 | Bezugsquellen-Details | Source Details | Optionale Freitextangabe an einer Bezugsquelle für Adresse, URL oder sonstige formlose Informationen. |
-| Zugang | Acquisition | Fachlicher Vorgang, durch den Exemplare eines Gegenstands durch Kauf oder Geschenk hinzukommen. Dabei wird eine Gegenstand-Bezugsquelle-Zuordnung angelegt oder die Menge einer bestehenden fachlich gleichen Zuordnung erhöht. |
+| Zugang | Acquisition | Fachlicher Vorgang, durch den Exemplare eines Gegenstands durch Kauf oder Geschenk hinzukommen. Dabei wird eine Gegenstand-Bezugsquelle-Zuordnung hinzugefügt oder die Menge einer bestehenden fachlich gleichen Zuordnung erhöht. |
 | Abgang | Removal | Fachlicher Vorgang, durch den Exemplare eines Gegenstands nicht mehr im Besitz sind. In Version 1 wird dies über das Ändern des Ortsbestands abgebildet und nicht als eigene Historie dokumentiert. |
 | Gegenstand-Bezugsquelle-Zuordnung | Item Source | Zuordnung eines Gegenstands zu einer Bezugsquelle. An dieser Zuordnung hängen Menge, Kaufpreis und Kaufdatum. Mehrere Zuordnungen zwischen demselben Gegenstand und derselben Bezugsquelle sind erlaubt, wenn sich Datum, Kaufpreis oder beides unterscheidet. Fachlich identische Zuordnungen sind nicht erlaubt. |
 | Kaufpreis | Purchase Price | Preisangabe an der Zuordnung zwischen Gegenstand und Bezugsquelle. Kaufpreise beziehen sich immer auf ein Stück. Der Wert 0 bedeutet „unbekannt“ und nicht „kostenlos“. |

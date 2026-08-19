@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.server.ResponseStatusException
-import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
 
@@ -804,57 +803,8 @@ class ItemWebController(
             ),
         )
 
-    private fun String?.toCategoryIdOrNull(): CategoryId? =
-        toUuidOrNull()?.let(::CategoryId)
-
-    private fun String?.toLocationIdOrNull(): LocationId? =
-        toUuidOrNull()?.let(::LocationId)
-
-    private fun String?.toSourceIdOrNull(): SourceId? =
-        toUuidOrNull()?.let(::SourceId)
-
-    private fun String?.toUuidOrNull(): UUID? =
-        this?.takeIf { it.isNotBlank() }?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-
-    private fun parseEstimatedValue(value: String): BigDecimal {
-        return parseMoneyValue(value)
-    }
-
-    private fun parseMoneyValue(value: String): BigDecimal {
-        val normalizedInput = value.trim()
-        if (normalizedInput.isBlank()) {
-            return BigDecimal.ZERO
-        }
-        return normalizedInput.toEstimatedValueOrNull()
-            ?: throw IllegalArgumentException("Estimated value is invalid.")
-    }
-
-    private fun String.toEstimatedValueOrNull(): BigDecimal? {
-        val normalizedInput = trim()
-        if (!GERMAN_DECIMAL_PATTERN.matches(normalizedInput)) {
-            return null
-        }
-        return normalizedInput
-            .replace(".", "")
-            .replace(',', '.')
-            .toBigDecimalOrNull()
-    }
-
-    private fun String.isNegativeGermanDecimal(): Boolean =
-        startsWith("-") && GERMAN_DECIMAL_PATTERN.matches(drop(1))
-
-    private fun parseQuantity(value: String): Int =
-        value.trim().toQuantityIntOrNull()
-            ?: throw IllegalArgumentException("Quantity is invalid.")
-
-    private fun parsePurchaseDate(value: String): LocalDate? =
-        value.trim()
-            .takeIf { it.isNotBlank() }
-            ?.toLocalDateOrNull()
-            ?: if (value.trim().isBlank()) null else throw IllegalArgumentException("Purchase date is invalid.")
-
-    private fun String.toLocalDateOrNull(): LocalDate? =
-        runCatching { LocalDate.parse(trim()) }.getOrNull()
+    private fun parseEstimatedValue(value: String) =
+        parseMoneyValue(value)
 
     private fun String?.toNoticeList(): List<String> =
         when (this) {
@@ -888,16 +838,4 @@ class ItemWebController(
         return acquisitionQuantity > totalQuantity.value
     }
 
-    private fun String.toQuantityIntOrNull(): Int? {
-        val normalizedInput = trim()
-        if (!GERMAN_INTEGER_PATTERN.matches(normalizedInput)) {
-            return null
-        }
-        return normalizedInput.replace(".", "").toIntOrNull()
-    }
-
-    companion object {
-        private val GERMAN_DECIMAL_PATTERN = Regex("""(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?""")
-        private val GERMAN_INTEGER_PATTERN = Regex("""(?:\d+|\d{1,3}(?:\.\d{3})+)""")
-    }
 }
