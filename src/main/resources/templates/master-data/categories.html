@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kategorien - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link" th:href="@{/items}">Inventar</a>
+            <a class="nav__link nav__link--active" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link" th:href="@{/locations}">Orte</a>
+            <a class="nav__link" th:href="@{/sources}">Bezugsquellen</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page">
+    <div class="page__header">
+        <h1>Kategorien</h1>
+        <a class="button button--primary" th:href="@{/categories/new}">Kategorie hinzufügen</a>
+    </div>
+
+    <div class="form__errors" th:if="${!#lists.isEmpty(page.errors)}">
+        <p th:each="error : ${page.errors}" th:text="${error.message}">Fehler</p>
+    </div>
+
+    <section class="table-section" aria-label="Kategorien">
+        <div class="table-wrap">
+            <table class="data-table data-table--compact">
+                <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Aktionen</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="category : ${page.categories}">
+                    <td th:text="${category.name}">Möbel</td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="table-link" th:href="@{/categories/{id}/edit(id=${category.id})}">Ändern</a>
+                            <a class="table-link table-link--danger" th:href="@{/categories/{id}/delete(id=${category.id})}">Löschen</a>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(page.categories)}">
+                    <td class="empty" colspan="2">Keine Kategorien erfasst</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

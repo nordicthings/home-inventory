@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ort hinzufügen - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link" th:href="@{/items}">Inventar</a>
+            <a class="nav__link" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link nav__link--active" th:href="@{/locations}">Orte</a>
+            <a class="nav__link" th:href="@{/sources}">Bezugsquellen</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page page--narrow">
+    <div class="page__header">
+        <h1 th:text="${page.id == null ? 'Ort hinzufügen' : 'Ort bearbeiten'}">Ort bearbeiten</h1>
+        <a class="button button--secondary" th:href="@{/locations}">Zurück zu Orten</a>
+    </div>
+
+    <form class="form" method="post" th:action="${page.id == null ? '/locations' : '/locations/' + page.id}">
+        <div class="form__errors" th:if="${!#lists.isEmpty(page.globalErrors)}">
+            <p th:each="error : ${page.globalErrors}" th:text="${error.message}">Die Eingaben sind ungültig.</p>
+        </div>
+
+        <div class="field">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" autofocus th:value="${page.form.name}" th:classappend="${page.errorFor('name') != null} ? 'input--error'">
+            <p class="field-error" th:if="${page.errorFor('name') != null}" th:text="${page.errorFor('name')}">Name ist erforderlich.</p>
+        </div>
+
+        <div class="field">
+            <label for="type">Ortstyp</label>
+            <select id="type" name="type" th:classappend="${page.errorFor('type') != null} ? 'input--error'">
+                <option value="" th:selected="${page.form.type == ''}">Ortstyp auswählen</option>
+                <option th:each="type : ${page.typeOptions}" th:value="${type.id}" th:text="${type.label}" th:selected="${type.id == page.form.type}"></option>
+            </select>
+            <p class="field-error" th:if="${page.errorFor('type') != null}" th:text="${page.errorFor('type')}">Ortstyp ist erforderlich.</p>
+        </div>
+
+        <div class="form__actions">
+            <button class="button button--primary" type="submit" th:text="${page.id == null ? 'Ort speichern' : 'Änderungen speichern'}">Speichern</button>
+            <a class="button button--secondary" th:href="@{/locations}">Abbrechen</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

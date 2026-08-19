@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Orte - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link" th:href="@{/items}">Inventar</a>
+            <a class="nav__link" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link nav__link--active" th:href="@{/locations}">Orte</a>
+            <a class="nav__link" th:href="@{/sources}">Bezugsquellen</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page">
+    <div class="page__header">
+        <h1>Orte</h1>
+        <a class="button button--primary" th:href="@{/locations/new}">Ort hinzufügen</a>
+    </div>
+
+    <div class="form__errors" th:if="${!#lists.isEmpty(page.errors)}">
+        <p th:each="error : ${page.errors}" th:text="${error.message}">Fehler</p>
+    </div>
+
+    <section class="table-section" aria-label="Orte">
+        <div class="table-wrap">
+            <table class="data-table data-table--compact">
+                <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Typ</th>
+                    <th scope="col">Aktionen</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="location : ${page.locations}">
+                    <td th:text="${location.name}">Küche</td>
+                    <td th:text="${location.type}">intern</td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="table-link" th:href="@{/locations/{id}/edit(id=${location.id})}">Ändern</a>
+                            <a class="table-link table-link--danger" th:href="@{/locations/{id}/delete(id=${location.id})}">Löschen</a>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(page.locations)}">
+                    <td class="empty" colspan="3">Keine Orte erfasst</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bezugsquellen - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link" th:href="@{/items}">Inventar</a>
+            <a class="nav__link" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link" th:href="@{/locations}">Orte</a>
+            <a class="nav__link nav__link--active" th:href="@{/sources}">Bezugsquellen</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page">
+    <div class="page__header">
+        <h1>Bezugsquellen</h1>
+        <a class="button button--primary" th:href="@{/sources/new}">Bezugsquelle hinzufügen</a>
+    </div>
+
+    <div class="form__errors" th:if="${!#lists.isEmpty(page.errors)}">
+        <p th:each="error : ${page.errors}" th:text="${error.message}">Fehler</p>
+    </div>
+
+    <section class="table-section" aria-label="Bezugsquellen">
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Details</th>
+                    <th scope="col">Aktionen</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="source : ${page.sources}">
+                    <td th:text="${source.name}">Amazon</td>
+                    <td th:text="${source.details}">Online</td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="table-link" th:href="@{/sources/{id}/edit(id=${source.id})}">Ändern</a>
+                            <a class="table-link table-link--danger" th:href="@{/sources/{id}/delete(id=${source.id})}">Löschen</a>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(page.sources)}">
+                    <td class="empty" colspan="3">Keine Bezugsquellen erfasst</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

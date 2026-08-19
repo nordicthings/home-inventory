@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kategorie löschen - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link" th:href="@{/items}">Inventar</a>
+            <a class="nav__link nav__link--active" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link" th:href="@{/locations}">Orte</a>
+            <a class="nav__link" th:href="@{/sources}">Bezugsquellen</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page page--narrow">
+    <div class="page__header">
+        <h1>Kategorie löschen</h1>
+        <a class="button button--secondary" th:href="@{/categories}">Zurück zu Kategorien</a>
+    </div>
+
+    <section class="confirm-box" aria-label="Kategorie löschen">
+        <p>Diese Kategorie wird dauerhaft gelöscht.</p>
+        <dl class="confirm-details">
+            <div>
+                <dt>Name</dt>
+                <dd th:text="${category.name}">Möbel</dd>
+            </div>
+        </dl>
+        <form class="form__actions" method="post" th:action="@{/categories/{id}/delete(id=${category.id})}">
+            <button class="button button--danger" type="submit">Endgültig löschen</button>
+            <a class="button button--secondary" th:href="@{/categories}">Abbrechen</a>
+        </form>
+    </section>
+</main>
+</body>
+</html>
