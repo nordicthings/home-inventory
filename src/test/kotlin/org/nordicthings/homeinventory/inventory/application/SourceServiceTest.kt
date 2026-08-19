@@ -80,4 +80,17 @@ class SourceServiceTest {
 
         verify(exactly = 0) { sourceRepository.deleteById(any()) }
     }
+
+    @Test
+    fun `reports whether source can be deleted`() {
+        val source = Source.create(SourceId.newId(), SourceName.of("Amazon"))
+        every { sourceRepository.findById(source.id) } returns source
+        every { itemRepository.existsBySourceId(source.id) } returns false
+
+        assertEquals(true, service.canDeleteSource(source.id))
+
+        every { itemRepository.existsBySourceId(source.id) } returns true
+
+        assertEquals(false, service.canDeleteSource(source.id))
+    }
 }

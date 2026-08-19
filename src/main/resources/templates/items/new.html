@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Gegenstand anlegen - Nordic Things</title>
+    <title>Gegenstand hinzufügen - Nordic Things</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
@@ -12,13 +12,16 @@
         <a class="brand" th:href="@{/items}">Nordic Things</a>
         <nav class="nav" aria-label="Hauptnavigation">
             <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+            <a class="nav__link" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link" th:href="@{/locations}">Orte</a>
+            <a class="nav__link" th:href="@{/sources}">Bezugsquellen</a>
         </nav>
     </div>
 </header>
 
 <main class="page page--narrow">
     <div class="page__header">
-        <h1>Gegenstand anlegen</h1>
+        <h1>Gegenstand hinzufügen</h1>
         <a class="button button--secondary" th:href="@{/items}">Zurück zur Liste</a>
     </div>
 
@@ -33,6 +36,7 @@
                    name="name"
                    type="text"
                    autocomplete="off"
+                   autofocus
                    th:value="${page.form.name}"
                    th:classappend="${page.errorFor('name') != null} ? 'input--error'">
             <p class="field-error" th:if="${page.errorFor('name') != null}" th:text="${page.errorFor('name')}">Name ist erforderlich.</p>

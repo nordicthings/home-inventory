@@ -236,13 +236,13 @@ class ItemWebController(
         }
 
         return try {
-            itemUseCase.createItem(
+            val item = itemUseCase.createItem(
                 name = ItemName.of(form.name),
                 categoryId = CategoryId(UUID.fromString(form.categoryId)),
                 estimatedValue = MonetaryValue.of(parseEstimatedValue(form.estimatedValue)),
                 note = form.note.trim(),
             )
-            "redirect:/items"
+            "redirect:/items/${item.id.value}"
         } catch (exception: DuplicateNameException) {
             model.addAttribute("page", createCreatePageView(form, listOf(FormErrorView("name", "Name ist bereits vergeben."))))
             "items/new"

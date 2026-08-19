@@ -64,7 +64,7 @@ class ItemWebControllerTest {
 
         assertEquals(200, response.statusCode())
         assertContains(response.body(), "<h1>Inventar</h1>")
-        assertContains(response.body(), "Gegenstand anlegen")
+        assertContains(response.body(), "Gegenstand hinzufügen")
         assertContains(response.body(), "Alle Kategorien")
         assertContains(response.body(), "Computer &amp; Peripherie")
         assertContains(response.body(), "Alle Orte")
@@ -87,7 +87,8 @@ class ItemWebControllerTest {
         val response = get("/items/new")
 
         assertEquals(200, response.statusCode())
-        assertContains(response.body(), "<h1>Gegenstand anlegen</h1>")
+        assertContains(response.body(), "<h1>Gegenstand hinzufügen</h1>")
+        assertContains(response.body(), "autofocus")
         assertContains(response.body(), "Name")
         assertContains(response.body(), "Kategorie auswählen")
         assertContains(response.body(), "Schätzwert")
@@ -137,7 +138,7 @@ class ItemWebControllerTest {
     }
 
     @Test
-    fun `creates item and redirects to list`() {
+    fun `creates item and redirects to detail page`() {
         val createForm = get("/items/new").body()
         val categoryId = Regex("""<option value="([^"]+)">Computer &amp; Peripherie</option>""")
             .find(createForm)
@@ -156,16 +157,16 @@ class ItemWebControllerTest {
         )
 
         assertEquals(302, response.statusCode())
-        assertEquals("/items", URI.create(response.headers().firstValue("location").orElseThrow()).path)
-        assertEquals("Laptop", itemRepository.findByNormalizedName("laptop")?.name?.value)
+        val item = assertNotNull(itemRepository.findByNormalizedName("laptop"))
+        assertEquals("/items/${item.id.value}", URI.create(response.headers().firstValue("location").orElseThrow()).path)
+        assertEquals("Laptop", item.name.value)
         assertContains(itemRepository.search(ItemSearchCriteria()).map { it.name.value }, "Laptop")
 
-        val listResponse = get("/items")
-        assertEquals(200, listResponse.statusCode())
-        assertContains(listResponse.body(), "Laptop")
-        assertContains(listResponse.body(), "Computer &amp; Peripherie")
-        assertContains(listResponse.body(), "0")
-        assertContains(listResponse.body(), "800,00 EUR")
+        val detailResponse = get("/items/${item.id.value}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "Laptop")
+        assertContains(detailResponse.body(), "Computer &amp; Peripherie")
+        assertContains(detailResponse.body(), "800,00 EUR")
     }
 
     @Test
@@ -190,6 +191,10 @@ class ItemWebControllerTest {
         assertEquals(302, response.statusCode())
         val item = assertNotNull(itemRepository.findByNormalizedName("blank-estimated-value-laptop"))
         assertEquals(MonetaryValue.unknown(), item.estimatedValue)
+
+        val detailResponse = get("/items/${item.id.value}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "unbekannt")
     }
 
     @Test

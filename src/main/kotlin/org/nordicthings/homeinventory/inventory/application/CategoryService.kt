@@ -29,6 +29,12 @@ class CategoryService(
         return categoryRepository.save(category.rename(name))
     }
 
+    override fun canDeleteCategory(id: CategoryId): Boolean {
+        categoryRepository.findById(id)
+            ?: throw EntityNotFoundException("Category does not exist: $id")
+        return !itemRepository.existsByCategoryId(id)
+    }
+
     override fun deleteCategory(id: CategoryId) {
         categoryRepository.findById(id)
             ?: throw EntityNotFoundException("Category does not exist: $id")

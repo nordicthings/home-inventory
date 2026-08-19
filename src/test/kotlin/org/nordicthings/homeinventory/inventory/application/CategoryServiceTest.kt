@@ -84,6 +84,19 @@ class CategoryServiceTest {
     }
 
     @Test
+    fun `reports whether category can be deleted`() {
+        val category = Category(CategoryId.newId(), CategoryName.of("Möbel"))
+        every { categoryRepository.findById(category.id) } returns category
+        every { itemRepository.existsByCategoryId(category.id) } returns false
+
+        assertEquals(true, service.canDeleteCategory(category.id))
+
+        every { itemRepository.existsByCategoryId(category.id) } returns true
+
+        assertEquals(false, service.canDeleteCategory(category.id))
+    }
+
+    @Test
     fun `deletes unused category`() {
         val category = Category(CategoryId.newId(), CategoryName.of("Möbel"))
         every { categoryRepository.findById(category.id) } returns category

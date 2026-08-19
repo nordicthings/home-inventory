@@ -12,5 +12,7 @@ interface LocationUseCase {
 
     fun changeLocationType(id: LocationId, type: LocationType): Location
 
+    fun canDeleteLocation(id: LocationId): Boolean
+
     fun deleteLocation(id: LocationId)
 }

@@ -47,7 +47,7 @@ fun ItemListEntry.toRowView(): ItemListRowView =
     )
 
 fun MonetaryValue?.formatForView(): String =
-    this?.let {
+    this?.takeIf { it.isKnown }?.let {
         "${it.amount.formatDecimalForView()} ${it.currency.currencyCode}"
     } ?: "unbekannt"
 

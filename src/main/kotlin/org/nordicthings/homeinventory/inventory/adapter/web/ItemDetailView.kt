@@ -3,7 +3,6 @@ package org.nordicthings.homeinventory.inventory.adapter.web
 import org.nordicthings.homeinventory.inventory.application.ItemAcquisitionDetails
 import org.nordicthings.homeinventory.inventory.application.ItemDetails
 import org.nordicthings.homeinventory.inventory.application.ItemLocationQuantityDetails
-import org.nordicthings.homeinventory.inventory.domain.LocationType
 import java.time.format.DateTimeFormatter
 
 data class ItemDetailPageView(
@@ -85,9 +84,3 @@ fun ItemAcquisitionDetails.toDeletePageView(): ItemAcquisitionDeleteView =
         purchasePrice = purchasePrice.formatForView(),
         purchaseDate = purchaseDate?.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) ?: "unbekannt",
     )
-
-private fun LocationType.toViewLabel(): String =
-    when (this) {
-        LocationType.INTERNAL -> "intern"
-        LocationType.EXTERNAL -> "extern"
-    }

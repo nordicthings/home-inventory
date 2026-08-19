@@ -9,5 +9,7 @@ interface CategoryUseCase {
 
     fun renameCategory(id: CategoryId, name: CategoryName): Category
 
+    fun canDeleteCategory(id: CategoryId): Boolean
+
     fun deleteCategory(id: CategoryId)
 }

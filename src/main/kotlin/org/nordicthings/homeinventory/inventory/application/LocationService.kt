@@ -36,6 +36,12 @@ class LocationService(
         return locationRepository.save(location.changeType(type))
     }
 
+    override fun canDeleteLocation(id: LocationId): Boolean {
+        locationRepository.findById(id)
+            ?: throw EntityNotFoundException("Location does not exist: $id")
+        return !itemRepository.existsByLocationId(id)
+    }
+
     override fun deleteLocation(id: LocationId) {
         locationRepository.findById(id)
             ?: throw EntityNotFoundException("Location does not exist: $id")

@@ -81,4 +81,17 @@ class LocationServiceTest {
 
         verify(exactly = 0) { locationRepository.deleteById(any()) }
     }
+
+    @Test
+    fun `reports whether location can be deleted`() {
+        val location = Location.create(LocationId.newId(), LocationName.of("Küche"), LocationType.INTERNAL)
+        every { locationRepository.findById(location.id) } returns location
+        every { itemRepository.existsByLocationId(location.id) } returns false
+
+        assertEquals(true, service.canDeleteLocation(location.id))
+
+        every { itemRepository.existsByLocationId(location.id) } returns true
+
+        assertEquals(false, service.canDeleteLocation(location.id))
+    }
 }

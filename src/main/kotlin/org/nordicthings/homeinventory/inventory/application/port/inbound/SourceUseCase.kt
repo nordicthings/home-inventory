@@ -11,5 +11,7 @@ interface SourceUseCase {
 
     fun changeSourceDetails(id: SourceId, details: String): Source
 
+    fun canDeleteSource(id: SourceId): Boolean
+
     fun deleteSource(id: SourceId)
 }

@@ -35,6 +35,12 @@ class SourceService(
         return sourceRepository.save(source.changeDetails(details))
     }
 
+    override fun canDeleteSource(id: SourceId): Boolean {
+        sourceRepository.findById(id)
+            ?: throw EntityNotFoundException("Source does not exist: $id")
+        return !itemRepository.existsBySourceId(id)
+    }
+
     override fun deleteSource(id: SourceId) {
         sourceRepository.findById(id)
             ?: throw EntityNotFoundException("Source does not exist: $id")

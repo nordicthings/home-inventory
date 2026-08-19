@@ -12,6 +12,9 @@
         <a class="brand" th:href="@{/items}">Nordic Things</a>
         <nav class="nav" aria-label="Hauptnavigation">
             <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+            <a class="nav__link" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link" th:href="@{/locations}">Orte</a>
+            <a class="nav__link" th:href="@{/sources}">Bezugsquellen</a>
         </nav>
     </div>
 </header>
@@ -47,6 +50,7 @@
             <label for="targetLocationId">Zielort</label>
             <select id="targetLocationId"
                     name="targetLocationId"
+                    autofocus
                     th:classappend="${page.errorFor('targetLocationId') != null} ? 'input--error'">
                 <option value="" th:selected="${page.form.targetLocationId == ''}">Zielort auswählen</option>
                 <option th:each="location : ${page.locations}"
