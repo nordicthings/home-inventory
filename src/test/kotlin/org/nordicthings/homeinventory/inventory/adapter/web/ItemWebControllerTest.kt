@@ -541,8 +541,42 @@ class ItemWebControllerTest {
         assertContains(response.body(), "<h1>Bestand erfassen</h1>")
         assertContains(response.body(), "Existing-Location-Quantity-Laptop")
         assertContains(response.body(), """value="${kitchen.id.value}"""")
+        assertContains(response.body(), """type="hidden" name="locationId" value="${kitchen.id.value}"""")
+        assertContains(response.body(), """disabled="disabled"""")
         assertContains(response.body(), """selected="selected">Küche</option>""")
         assertContains(response.body(), """value="1.000"""")
+    }
+
+    @Test
+    fun `shows notice when location quantity falls below acquisition quantity`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Location-Quantity-Notice-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(5))
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(5), MonetaryValue.of("800"), null)
+
+        val response = post(
+            "/items/${item.id.value}/locations",
+            mapOf(
+                "locationId" to kitchen.id.value.toString(),
+                "quantity" to "3",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        val redirect = URI.create(response.headers().firstValue("location").orElseThrow())
+        assertEquals("/items/${item.id.value}", redirect.path)
+        assertEquals("notice=acquisitionQuantityExceedsLocationQuantity", redirect.query)
+
+        val detailResponse = get("${redirect.path}?${redirect.query}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "Die Zugangsgesamtmenge ist größer als die aktuelle Ortsgesamtmenge.")
     }
 
     @Test
@@ -793,6 +827,403 @@ class ItemWebControllerTest {
                 "quantity" to "1",
             ),
         )
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `renders item acquisition form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Acquisition-Form-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = get("/items/${item.id.value}/acquisitions/new")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Zugang erfassen</h1>")
+        assertContains(response.body(), "Acquisition-Form-Laptop")
+        assertContains(response.body(), "Bezugsquelle auswählen")
+        assertContains(response.body(), """value="${amazon.id.value}"""")
+        assertContains(response.body(), "Menge")
+        assertContains(response.body(), "Kaufpreis")
+        assertContains(response.body(), "EUR")
+        assertContains(response.body(), "Kaufdatum")
+        assertContains(response.body(), """action="/items/${item.id.value}/acquisitions"""")
+    }
+
+    @Test
+    fun `records item acquisition and redirects to detail page`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Acquisition-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}/acquisitions",
+            mapOf(
+                "sourceId" to amazon.id.value.toString(),
+                "quantity" to "1.000",
+                "purchasePrice" to "1.234,56",
+                "purchaseDate" to "2026-01-03",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        assertEquals("/items/${item.id.value}", URI.create(response.headers().firstValue("location").orElseThrow()).path)
+        val changedItem = assertNotNull(itemRepository.findById(item.id))
+        val acquisition = changedItem.sources.single()
+        assertEquals(amazon.id, acquisition.sourceId)
+        assertEquals(Quantity.of(1000), acquisition.quantity)
+        assertEquals(MonetaryValue.of("1234.56"), acquisition.purchasePrice)
+        assertEquals(LocalDate.of(2026, 1, 3), acquisition.purchaseDate)
+
+        val detailResponse = get("/items/${item.id.value}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "Amazon")
+        assertContains(detailResponse.body(), "1.000")
+        assertContains(detailResponse.body(), "1.234,56 EUR")
+        assertContains(detailResponse.body(), "03.01.2026")
+        assertContains(detailResponse.body(), """href="/items/${item.id.value}/acquisitions/${acquisition.id.value}/edit"""")
+        assertContains(detailResponse.body(), """href="/items/${item.id.value}/acquisitions/${acquisition.id.value}/delete"""")
+    }
+
+    @Test
+    fun `records item acquisition with unknown purchase price and date when left blank`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Blank-Acquisition-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}/acquisitions",
+            mapOf(
+                "sourceId" to amazon.id.value.toString(),
+                "quantity" to "1",
+                "purchasePrice" to "",
+                "purchaseDate" to "",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        val acquisition = assertNotNull(itemRepository.findById(item.id)).sources.single()
+        assertEquals(MonetaryValue.unknown(), acquisition.purchasePrice)
+        assertEquals(null, acquisition.purchaseDate)
+    }
+
+    @Test
+    fun `shows notice when recorded acquisition quantity exceeds location quantity`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Acquisition-Quantity-Notice-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(1))
+
+        val response = post(
+            "/items/${item.id.value}/acquisitions",
+            mapOf(
+                "sourceId" to amazon.id.value.toString(),
+                "quantity" to "2",
+                "purchasePrice" to "10,00",
+                "purchaseDate" to "",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        val redirect = URI.create(response.headers().firstValue("location").orElseThrow())
+        assertEquals("/items/${item.id.value}", redirect.path)
+        assertEquals("notice=acquisitionQuantityExceedsLocationQuantity", redirect.query)
+
+        val detailResponse = get("${redirect.path}?${redirect.query}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "Die Zugangsgesamtmenge ist größer als die aktuelle Ortsgesamtmenge.")
+    }
+
+    @Test
+    fun `records matching item acquisition by merging quantity and showing notice`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Merged-Acquisition-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(1))
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(1), MonetaryValue.of("10"), LocalDate.of(2026, 1, 3))
+
+        val response = post(
+            "/items/${item.id.value}/acquisitions",
+            mapOf(
+                "sourceId" to amazon.id.value.toString(),
+                "quantity" to "2",
+                "purchasePrice" to "10,00",
+                "purchaseDate" to "2026-01-03",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        val redirect = URI.create(response.headers().firstValue("location").orElseThrow())
+        assertEquals("/items/${item.id.value}", redirect.path)
+        assertEquals("notice=acquisitionMerged,acquisitionQuantityExceedsLocationQuantity", redirect.query)
+        val changedItem = assertNotNull(itemRepository.findById(item.id))
+        assertEquals(1, changedItem.sources.size)
+        assertEquals(Quantity.of(3), changedItem.sources.single().quantity)
+
+        val detailResponse = get("${redirect.path}?${redirect.query}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "Zugang wurde mit einem bestehenden Zugang zusammengeführt.")
+        assertContains(detailResponse.body(), "Die Zugangsgesamtmenge ist größer als die aktuelle Ortsgesamtmenge.")
+    }
+
+    @Test
+    fun `renders existing item acquisition form with current values`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Existing-Acquisition-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(1000), MonetaryValue.of("1234.56"), LocalDate.of(2026, 1, 3))
+        val acquisitionId = assertNotNull(itemRepository.findById(item.id)).sources.single().id
+
+        val response = get("/items/${item.id.value}/acquisitions/${acquisitionId.value}/edit")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Zugang bearbeiten</h1>")
+        assertContains(response.body(), "Existing-Acquisition-Laptop")
+        assertContains(response.body(), """selected="selected">Amazon</option>""")
+        assertContains(response.body(), """value="1.000"""")
+        assertContains(response.body(), """value="1.234,56"""")
+        assertContains(response.body(), """value="2026-01-03"""")
+        assertContains(response.body(), """action="/items/${item.id.value}/acquisitions/${acquisitionId.value}"""")
+    }
+
+    @Test
+    fun `updates item acquisition and redirects to detail page`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val saturn = assertNotNull(sourceRepository.findByNormalizedName("saturn"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Update-Acquisition-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(1), MonetaryValue.of("800"), null)
+        val acquisitionId = assertNotNull(itemRepository.findById(item.id)).sources.single().id
+
+        val response = post(
+            "/items/${item.id.value}/acquisitions/${acquisitionId.value}",
+            mapOf(
+                "sourceId" to saturn.id.value.toString(),
+                "quantity" to "2",
+                "purchasePrice" to "750,50",
+                "purchaseDate" to "2026-02-01",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        assertEquals("/items/${item.id.value}", URI.create(response.headers().firstValue("location").orElseThrow()).path)
+        val acquisition = assertNotNull(itemRepository.findById(item.id)).sources.single()
+        assertEquals(acquisitionId, acquisition.id)
+        assertEquals(saturn.id, acquisition.sourceId)
+        assertEquals(Quantity.of(2), acquisition.quantity)
+        assertEquals(MonetaryValue.of("750.50"), acquisition.purchasePrice)
+        assertEquals(LocalDate.of(2026, 2, 1), acquisition.purchaseDate)
+    }
+
+    @Test
+    fun `shows notice when updated acquisition quantity exceeds location quantity`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Update-Acquisition-Quantity-Notice-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(1))
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(1), MonetaryValue.of("800"), null)
+        val acquisitionId = assertNotNull(itemRepository.findById(item.id)).sources.single().id
+
+        val response = post(
+            "/items/${item.id.value}/acquisitions/${acquisitionId.value}",
+            mapOf(
+                "sourceId" to amazon.id.value.toString(),
+                "quantity" to "2",
+                "purchasePrice" to "800,00",
+                "purchaseDate" to "",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        val redirect = URI.create(response.headers().firstValue("location").orElseThrow())
+        assertEquals("/items/${item.id.value}", redirect.path)
+        assertEquals("notice=acquisitionQuantityExceedsLocationQuantity", redirect.query)
+
+        val detailResponse = get("${redirect.path}?${redirect.query}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "Die Zugangsgesamtmenge ist größer als die aktuelle Ortsgesamtmenge.")
+    }
+
+    @Test
+    fun `shows validation errors for invalid item acquisition form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Invalid-Acquisition-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}/acquisitions",
+            mapOf(
+                "sourceId" to "not-a-uuid",
+                "quantity" to "0",
+                "purchasePrice" to "999.99",
+                "purchaseDate" to "not-a-date",
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Zugang erfassen</h1>")
+        assertContains(response.body(), "Bezugsquelle ist ungültig.")
+        assertContains(response.body(), "Menge muss eine positive ganze Zahl sein.")
+        assertContains(response.body(), "Kaufpreis muss im deutschen Zahlenformat angegeben werden.")
+        assertContains(response.body(), "Kaufdatum ist ungültig.")
+    }
+
+    @Test
+    fun `shows validation error for future purchase date on item acquisition form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Future-Acquisition-Date-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post(
+            "/items/${item.id.value}/acquisitions",
+            mapOf(
+                "sourceId" to amazon.id.value.toString(),
+                "quantity" to "1",
+                "purchasePrice" to "10,00",
+                "purchaseDate" to LocalDate.now().plusDays(1).toString(),
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Zugang erfassen</h1>")
+        assertContains(response.body(), "Kaufdatum darf nicht in der Zukunft liegen.")
+    }
+
+    @Test
+    fun `renders item acquisition delete confirmation page`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Delete-Acquisition-Confirm-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(1), MonetaryValue.of("800"), LocalDate.of(2026, 1, 3))
+        val acquisitionId = assertNotNull(itemRepository.findById(item.id)).sources.single().id
+
+        val response = get("/items/${item.id.value}/acquisitions/${acquisitionId.value}/delete")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Zugang löschen</h1>")
+        assertContains(response.body(), "Delete-Acquisition-Confirm-Laptop")
+        assertContains(response.body(), "Amazon")
+        assertContains(response.body(), "800,00 EUR")
+        assertContains(response.body(), "Dieser Zugang wird dauerhaft gelöscht.")
+        assertContains(response.body(), """action="/items/${item.id.value}/acquisitions/${acquisitionId.value}/delete"""")
+        assertContains(response.body(), "Endgültig löschen")
+    }
+
+    @Test
+    fun `deletes item acquisition and redirects to detail page`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Delete-Acquisition-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(1), MonetaryValue.of("800"), null)
+        val acquisitionId = assertNotNull(itemRepository.findById(item.id)).sources.single().id
+
+        val response = post("/items/${item.id.value}/acquisitions/${acquisitionId.value}/delete", emptyMap())
+
+        assertEquals(302, response.statusCode())
+        assertEquals("/items/${item.id.value}", URI.create(response.headers().firstValue("location").orElseThrow()).path)
+        assertEquals(emptyList(), itemRepository.findById(item.id)?.sources)
+
+        val detailResponse = get("/items/${item.id.value}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "Keine Zugänge erfasst")
+    }
+
+    @Test
+    fun `returns not found for missing item acquisition form`() {
+        val response = get("/items/${UUID.randomUUID()}/acquisitions/new")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found for missing existing item acquisition form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Missing-Acquisition-Edit-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = get("/items/${item.id.value}/acquisitions/${UUID.randomUUID()}/edit")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found when deleting missing item acquisition`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Missing-Acquisition-Delete-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = post("/items/${item.id.value}/acquisitions/${UUID.randomUUID()}/delete", emptyMap())
 
         assertEquals(404, response.statusCode())
     }

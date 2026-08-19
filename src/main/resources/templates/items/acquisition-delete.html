@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Zugang löschen - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page page--narrow">
+    <div class="page__header">
+        <div>
+            <p class="eyebrow" th:text="${item.name}">Laptop</p>
+            <h1>Zugang löschen</h1>
+        </div>
+        <a class="button button--secondary" th:href="@{/items/{id}(id=${item.id})}">Zurück zum Gegenstand</a>
+    </div>
+
+    <section class="confirm-box" aria-label="Zugang löschen">
+        <p>Dieser Zugang wird dauerhaft gelöscht.</p>
+
+        <dl class="confirm-details">
+            <div>
+                <dt>Bezugsquelle</dt>
+                <dd th:text="${acquisition.sourceName}">Amazon</dd>
+            </div>
+            <div>
+                <dt>Menge</dt>
+                <dd th:text="${acquisition.quantity}">1</dd>
+            </div>
+            <div>
+                <dt>Kaufpreis</dt>
+                <dd th:text="${acquisition.purchasePrice}">800,00 EUR</dd>
+            </div>
+            <div>
+                <dt>Kaufdatum</dt>
+                <dd th:text="${acquisition.purchaseDate}">03.01.2026</dd>
+            </div>
+        </dl>
+
+        <form class="form__actions"
+              method="post"
+              th:action="@{/items/{id}/acquisitions/{acquisitionId}/delete(id=${item.id},acquisitionId=${acquisition.id})}">
+            <button class="button button--danger" type="submit">Endgültig löschen</button>
+            <a class="button button--secondary" th:href="@{/items/{id}(id=${item.id})}">Abbrechen</a>
+        </form>
+    </section>
+</main>
+</body>
+</html>

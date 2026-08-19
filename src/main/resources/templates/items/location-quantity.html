@@ -32,8 +32,10 @@
 
         <div class="field">
             <label for="locationId">Ort</label>
+            <input th:if="${page.locationReadOnly}" type="hidden" name="locationId" th:value="${page.form.locationId}">
             <select id="locationId"
                     name="locationId"
+                    th:disabled="${page.locationReadOnly}"
                     th:classappend="${page.errorFor('locationId') != null} ? 'input--error'">
                 <option value="" th:selected="${page.form.locationId == ''}">Ort auswählen</option>
                 <option th:each="location : ${page.locations}"

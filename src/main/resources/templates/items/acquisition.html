@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Zugang erfassen - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page page--narrow">
+    <div class="page__header">
+        <div>
+            <p class="eyebrow" th:text="${page.itemName}">Laptop</p>
+            <h1 th:text="${page.acquisitionId == null ? 'Zugang erfassen' : 'Zugang bearbeiten'}">Zugang erfassen</h1>
+        </div>
+        <a class="button button--secondary" th:href="@{/items/{id}(id=${page.itemId})}">Zurück zum Gegenstand</a>
+    </div>
+
+    <form class="form"
+          method="post"
+          th:action="${page.acquisitionId == null ? '/items/' + page.itemId + '/acquisitions' : '/items/' + page.itemId + '/acquisitions/' + page.acquisitionId}">
+        <div class="form__errors" th:if="${!#lists.isEmpty(page.globalErrors)}">
+            <p th:each="error : ${page.globalErrors}" th:text="${error.message}">Die Eingaben sind ungültig.</p>
+        </div>
+
+        <div class="field">
+            <label for="sourceId">Bezugsquelle</label>
+            <select id="sourceId"
+                    name="sourceId"
+                    th:classappend="${page.errorFor('sourceId') != null} ? 'input--error'">
+                <option value="" th:selected="${page.form.sourceId == ''}">Bezugsquelle auswählen</option>
+                <option th:each="source : ${page.sources}"
+                        th:value="${source.id}"
+                        th:text="${source.label}"
+                        th:selected="${source.id == page.form.sourceId}"></option>
+            </select>
+            <p class="field-error" th:if="${page.errorFor('sourceId') != null}" th:text="${page.errorFor('sourceId')}">Bezugsquelle ist erforderlich.</p>
+        </div>
+
+        <div class="field">
+            <label for="quantity">Menge</label>
+            <input id="quantity"
+                   name="quantity"
+                   type="text"
+                   inputmode="numeric"
+                   autocomplete="off"
+                   pattern="([0-9]+|[0-9]{1,3}(\.[0-9]{3})+)"
+                   th:value="${page.form.quantity}"
+                   th:classappend="${page.errorFor('quantity') != null} ? 'input--error'">
+            <p class="field-error" th:if="${page.errorFor('quantity') != null}" th:text="${page.errorFor('quantity')}">Menge ist erforderlich.</p>
+        </div>
+
+        <div class="field">
+            <label for="purchasePrice">Kaufpreis</label>
+            <div class="money-input" th:classappend="${page.errorFor('purchasePrice') != null} ? 'input--error'">
+                <input id="purchasePrice"
+                       name="purchasePrice"
+                       type="text"
+                       inputmode="decimal"
+                       autocomplete="off"
+                       pattern="([0-9]+|[0-9]{1,3}(\.[0-9]{3})+)(,[0-9]{1,2})?"
+                       th:value="${page.form.purchasePrice}">
+                <span class="money-input__currency">EUR</span>
+            </div>
+            <p class="field-error" th:if="${page.errorFor('purchasePrice') != null}" th:text="${page.errorFor('purchasePrice')}">Kaufpreis ist ungültig.</p>
+        </div>
+
+        <div class="field">
+            <label for="purchaseDate">Kaufdatum</label>
+            <input id="purchaseDate"
+                   name="purchaseDate"
+                   type="date"
+                   th:value="${page.form.purchaseDate}"
+                   th:classappend="${page.errorFor('purchaseDate') != null} ? 'input--error'">
+            <p class="field-error" th:if="${page.errorFor('purchaseDate') != null}" th:text="${page.errorFor('purchaseDate')}">Kaufdatum ist ungültig.</p>
+        </div>
+
+        <div class="form__actions">
+            <button class="button button--primary" type="submit" th:text="${page.acquisitionId == null ? 'Zugang speichern' : 'Änderungen speichern'}">Zugang speichern</button>
+            <a class="button button--secondary" th:href="@{/items/{id}(id=${page.itemId})}">Abbrechen</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

@@ -17,6 +17,7 @@ data class ItemDetailPageView(
     val totalValue: String,
     val locationQuantities: List<ItemLocationQuantityView>,
     val acquisitions: List<ItemAcquisitionView>,
+    val notices: List<String> = emptyList(),
 )
 
 data class ItemLocationQuantityView(
@@ -27,13 +28,23 @@ data class ItemLocationQuantityView(
 )
 
 data class ItemAcquisitionView(
+    val id: String,
+    val sourceId: String,
     val sourceName: String,
     val quantity: String,
     val purchasePrice: String,
     val purchaseDate: String,
 )
 
-fun ItemDetails.toDetailPageView(): ItemDetailPageView =
+data class ItemAcquisitionDeleteView(
+    val id: String,
+    val sourceName: String,
+    val quantity: String,
+    val purchasePrice: String,
+    val purchaseDate: String,
+)
+
+fun ItemDetails.toDetailPageView(notices: List<String> = emptyList()): ItemDetailPageView =
     ItemDetailPageView(
         id = id.value.toString(),
         name = name.value,
@@ -45,6 +56,7 @@ fun ItemDetails.toDetailPageView(): ItemDetailPageView =
         totalValue = totalValue.formatForView(),
         locationQuantities = locationQuantities.map { it.toLocationQuantityView() },
         acquisitions = acquisitions.map { it.toAcquisitionView() },
+        notices = notices,
     )
 
 private fun ItemLocationQuantityDetails.toLocationQuantityView(): ItemLocationQuantityView =
@@ -57,6 +69,17 @@ private fun ItemLocationQuantityDetails.toLocationQuantityView(): ItemLocationQu
 
 private fun ItemAcquisitionDetails.toAcquisitionView(): ItemAcquisitionView =
     ItemAcquisitionView(
+        id = id.value.toString(),
+        sourceId = sourceId.value.toString(),
+        sourceName = sourceName.value,
+        quantity = quantity.value.formatIntegerForView(),
+        purchasePrice = purchasePrice.formatForView(),
+        purchaseDate = purchaseDate?.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) ?: "unbekannt",
+    )
+
+fun ItemAcquisitionDetails.toDeletePageView(): ItemAcquisitionDeleteView =
+    ItemAcquisitionDeleteView(
+        id = id.value.toString(),
         sourceName = sourceName.value,
         quantity = quantity.value.formatIntegerForView(),
         purchasePrice = purchasePrice.formatForView(),

@@ -10,8 +10,10 @@ import org.nordicthings.homeinventory.inventory.application.port.inbound.GetSour
 import org.nordicthings.homeinventory.inventory.application.port.inbound.ItemUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.SearchItemsUseCase
 import org.nordicthings.homeinventory.inventory.domain.CategoryId
+import org.nordicthings.homeinventory.inventory.domain.Item
 import org.nordicthings.homeinventory.inventory.domain.ItemId
 import org.nordicthings.homeinventory.inventory.domain.ItemName
+import org.nordicthings.homeinventory.inventory.domain.ItemSourceId
 import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import org.nordicthings.homeinventory.inventory.domain.Quantity
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.server.ResponseStatusException
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.UUID
 
 @Controller
@@ -73,10 +76,11 @@ class ItemWebController(
     @GetMapping("/items/{id}")
     fun itemDetails(
         @PathVariable id: UUID,
+        @RequestParam(name = "notice", required = false) notice: String?,
         model: Model,
     ): String =
         try {
-            model.addAttribute("page", getItemDetailsUseCase.getItemDetails(ItemId(id)).toDetailPageView())
+            model.addAttribute("page", getItemDetailsUseCase.getItemDetails(ItemId(id)).toDetailPageView(notice.toNoticeList()))
             "items/detail"
         } catch (exception: EntityNotFoundException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
@@ -139,6 +143,7 @@ class ItemWebController(
                         locationId = locationQuantity.locationId.value.toString(),
                         quantity = locationQuantity.quantity.value.formatIntegerForView(),
                     ),
+                    locationReadOnly = true,
                 ),
             )
             "items/location-quantity"
@@ -159,6 +164,65 @@ class ItemWebController(
             errors = emptyList(),
             model = model,
         )
+
+    @GetMapping("/items/{id}/acquisitions/new")
+    fun newItemAcquisition(
+        @PathVariable id: UUID,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            model.addAttribute("page", createAcquisitionPageView(details.id.value, null, details.name.value, ItemAcquisitionForm()))
+            "items/acquisition"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
+    @GetMapping("/items/{id}/acquisitions/{acquisitionId}/edit")
+    fun editItemAcquisition(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            val acquisition = details.acquisitions.firstOrNull { it.id.value == acquisitionId }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Zugang wurde nicht gefunden.")
+            model.addAttribute(
+                "page",
+                createAcquisitionPageView(
+                    itemId = details.id.value,
+                    acquisitionId = acquisition.id.value,
+                    itemName = details.name.value,
+                    form = ItemAcquisitionForm(
+                        sourceId = acquisition.sourceId.value.toString(),
+                        quantity = acquisition.quantity.value.formatIntegerForView(),
+                        purchasePrice = acquisition.purchasePrice.formatAmountForForm(),
+                        purchaseDate = acquisition.purchaseDate?.toString().orEmpty(),
+                    ),
+                ),
+            )
+            "items/acquisition"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
+    @GetMapping("/items/{id}/acquisitions/{acquisitionId}/delete")
+    fun confirmDeleteItemAcquisition(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            val acquisition = details.acquisitions.firstOrNull { it.id.value == acquisitionId }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Zugang wurde nicht gefunden.")
+            model.addAttribute("item", details.toDetailPageView())
+            model.addAttribute("acquisition", acquisition.toDeletePageView())
+            "items/acquisition-delete"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
 
     @PostMapping("/items")
     fun createItem(
@@ -252,8 +316,7 @@ class ItemWebController(
                 id = ItemId(id),
                 locationId = LocationId(UUID.fromString(form.locationId)),
                 quantity = Quantity.of(parseQuantity(form.quantity)),
-            )
-            "redirect:/items/$id"
+            ).toItemDetailRedirect(id)
         } catch (exception: EntityNotFoundException) {
             if (exception.message?.startsWith("Item does not exist") == true) {
                 throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
@@ -278,8 +341,7 @@ class ItemWebController(
                 id = ItemId(id),
                 locationId = LocationId(locationId),
                 quantity = Quantity.ZERO,
-            )
-            "redirect:/items/$id"
+            ).toItemDetailRedirect(id)
         } catch (exception: EntityNotFoundException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
@@ -325,6 +387,94 @@ class ItemWebController(
         }
     }
 
+    @PostMapping("/items/{id}/acquisitions")
+    fun createItemAcquisition(
+        @PathVariable id: UUID,
+        @ModelAttribute form: ItemAcquisitionForm,
+        model: Model,
+    ): String {
+        val errors = validateAcquisitionForm(form)
+        if (errors.isNotEmpty()) {
+            return renderAcquisitionForm(id, null, form, errors, model)
+        }
+
+        return try {
+            val detailsBeforeSave = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            val sourceId = SourceId(UUID.fromString(form.sourceId))
+            val quantity = Quantity.of(parseQuantity(form.quantity))
+            val purchasePrice = MonetaryValue.of(parseMoneyValue(form.purchasePrice))
+            val purchaseDate = parsePurchaseDate(form.purchaseDate)
+            val merged = detailsBeforeSave.acquisitions.any {
+                it.sourceId == sourceId && it.purchasePrice == purchasePrice && it.purchaseDate == purchaseDate
+            }
+
+            itemUseCase.recordAcquisition(
+                id = ItemId(id),
+                sourceId = sourceId,
+                quantity = quantity,
+                purchasePrice = purchasePrice,
+                purchaseDate = purchaseDate,
+            ).toItemDetailRedirect(
+                id = id,
+                notices = listOfNotNull("acquisitionMerged".takeIf { merged }),
+            )
+        } catch (exception: EntityNotFoundException) {
+            if (exception.message?.startsWith("Item does not exist") == true) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+            }
+            renderAcquisitionForm(id, null, form, listOf(FormErrorView("sourceId", "Bezugsquelle wurde nicht gefunden.")), model)
+        } catch (exception: IllegalArgumentException) {
+            renderAcquisitionForm(id, null, form, listOf(FormErrorView(null, "Die Eingaben sind ungültig.")), model)
+        }
+    }
+
+    @PostMapping("/items/{id}/acquisitions/{acquisitionId}")
+    fun updateItemAcquisition(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+        @ModelAttribute form: ItemAcquisitionForm,
+        model: Model,
+    ): String {
+        val errors = validateAcquisitionForm(form)
+        if (errors.isNotEmpty()) {
+            return renderAcquisitionForm(id, acquisitionId, form, errors, model)
+        }
+
+        return try {
+            itemUseCase.updateAcquisition(
+                id = ItemId(id),
+                itemSourceId = ItemSourceId(acquisitionId),
+                sourceId = SourceId(UUID.fromString(form.sourceId)),
+                quantity = Quantity.of(parseQuantity(form.quantity)),
+                purchasePrice = MonetaryValue.of(parseMoneyValue(form.purchasePrice)),
+                purchaseDate = parsePurchaseDate(form.purchaseDate),
+            ).toItemDetailRedirect(id)
+        } catch (exception: EntityNotFoundException) {
+            if (exception.message?.startsWith("Item does not exist") == true) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+            }
+            renderAcquisitionForm(id, acquisitionId, form, listOf(FormErrorView("sourceId", "Bezugsquelle wurde nicht gefunden.")), model)
+        } catch (exception: IllegalStateException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Zugang wurde nicht gefunden.", exception)
+        } catch (exception: IllegalArgumentException) {
+            renderAcquisitionForm(id, acquisitionId, form, listOf(FormErrorView(null, "Die Eingaben sind ungültig.")), model)
+        }
+    }
+
+    @PostMapping("/items/{id}/acquisitions/{acquisitionId}/delete")
+    fun deleteItemAcquisition(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+    ): String =
+        try {
+            itemUseCase.deleteAcquisition(ItemId(id), ItemSourceId(acquisitionId))
+            "redirect:/items/$id"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        } catch (exception: IllegalStateException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Zugang wurde nicht gefunden.", exception)
+        }
+
     private fun createPageView(
         name: String?,
         categoryId: String?,
@@ -355,6 +505,10 @@ class ItemWebController(
         getLocationListUseCase.getLocationList()
             .map { SelectOptionView(it.id.value.toString(), it.name.value) }
 
+    private fun sourceOptions(): List<SelectOptionView> =
+        getSourceListUseCase.getSourceList()
+            .map { SelectOptionView(it.id.value.toString(), it.name.value) }
+
     private fun createCreatePageView(
         form: ItemCreateForm,
         errors: List<FormErrorView> = emptyList(),
@@ -364,6 +518,40 @@ class ItemWebController(
             categories = categoryOptions(),
             errors = errors,
         )
+
+    private fun createAcquisitionPageView(
+        itemId: UUID,
+        acquisitionId: UUID?,
+        itemName: String,
+        form: ItemAcquisitionForm,
+        errors: List<FormErrorView> = emptyList(),
+    ): ItemAcquisitionPageView =
+        ItemAcquisitionPageView(
+            itemId = itemId.toString(),
+            acquisitionId = acquisitionId?.toString(),
+            itemName = itemName,
+            form = form,
+            sources = sourceOptions(),
+            errors = errors,
+        )
+
+    private fun renderAcquisitionForm(
+        id: UUID,
+        acquisitionId: UUID?,
+        form: ItemAcquisitionForm,
+        errors: List<FormErrorView>,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            if (acquisitionId != null && details.acquisitions.none { it.id.value == acquisitionId }) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Zugang wurde nicht gefunden.")
+            }
+            model.addAttribute("page", createAcquisitionPageView(id, acquisitionId, details.name.value, form, errors))
+            "items/acquisition"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
 
     private fun createEditPageView(
         id: UUID,
@@ -381,6 +569,7 @@ class ItemWebController(
         itemId: UUID,
         itemName: String,
         form: ItemLocationQuantityForm,
+        locationReadOnly: Boolean = false,
         errors: List<FormErrorView> = emptyList(),
     ): ItemLocationQuantityPageView =
         ItemLocationQuantityPageView(
@@ -388,6 +577,7 @@ class ItemWebController(
             itemName = itemName,
             form = form,
             locations = locationOptions(),
+            locationReadOnly = locationReadOnly,
             errors = errors,
         )
 
@@ -399,7 +589,7 @@ class ItemWebController(
     ): String =
         try {
             val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
-            model.addAttribute("page", createLocationQuantityPageView(id, details.name.value, form, errors))
+            model.addAttribute("page", createLocationQuantityPageView(id, details.name.value, form, locationReadOnly = false, errors = errors))
             "items/location-quantity"
         } catch (exception: EntityNotFoundException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
@@ -480,6 +670,44 @@ class ItemWebController(
                 val amount = quantity.toQuantityIntOrNull()
                 if (amount == null || amount <= 0) {
                     add(FormErrorView("quantity", "Menge muss eine positive ganze Zahl sein."))
+                }
+            }
+        }
+
+    private fun validateAcquisitionForm(form: ItemAcquisitionForm): List<FormErrorView> =
+        buildList {
+            if (form.sourceId.isBlank()) {
+                add(FormErrorView("sourceId", "Bezugsquelle ist erforderlich."))
+            } else if (form.sourceId.toUuidOrNull() == null) {
+                add(FormErrorView("sourceId", "Bezugsquelle ist ungültig."))
+            }
+
+            val quantity = form.quantity.trim()
+            if (quantity.isBlank()) {
+                add(FormErrorView("quantity", "Menge ist erforderlich."))
+            } else {
+                val amount = quantity.toQuantityIntOrNull()
+                if (amount == null || amount <= 0) {
+                    add(FormErrorView("quantity", "Menge muss eine positive ganze Zahl sein."))
+                }
+            }
+
+            val purchasePrice = form.purchasePrice.trim()
+            if (purchasePrice.isNotBlank()) {
+                val amount = purchasePrice.toEstimatedValueOrNull()
+                if (amount == null && purchasePrice.isNegativeGermanDecimal()) {
+                    add(FormErrorView("purchasePrice", "Kaufpreis muss 0 oder größer sein."))
+                } else if (amount == null) {
+                    add(FormErrorView("purchasePrice", "Kaufpreis muss im deutschen Zahlenformat angegeben werden."))
+                }
+            }
+
+            if (form.purchaseDate.isNotBlank()) {
+                val purchaseDate = form.purchaseDate.toLocalDateOrNull()
+                if (purchaseDate == null) {
+                    add(FormErrorView("purchaseDate", "Kaufdatum ist ungültig."))
+                } else if (purchaseDate.isAfter(LocalDate.now())) {
+                    add(FormErrorView("purchaseDate", "Kaufdatum darf nicht in der Zukunft liegen."))
                 }
             }
         }
@@ -589,6 +817,10 @@ class ItemWebController(
         this?.takeIf { it.isNotBlank() }?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
     private fun parseEstimatedValue(value: String): BigDecimal {
+        return parseMoneyValue(value)
+    }
+
+    private fun parseMoneyValue(value: String): BigDecimal {
         val normalizedInput = value.trim()
         if (normalizedInput.isBlank()) {
             return BigDecimal.ZERO
@@ -614,6 +846,47 @@ class ItemWebController(
     private fun parseQuantity(value: String): Int =
         value.trim().toQuantityIntOrNull()
             ?: throw IllegalArgumentException("Quantity is invalid.")
+
+    private fun parsePurchaseDate(value: String): LocalDate? =
+        value.trim()
+            .takeIf { it.isNotBlank() }
+            ?.toLocalDateOrNull()
+            ?: if (value.trim().isBlank()) null else throw IllegalArgumentException("Purchase date is invalid.")
+
+    private fun String.toLocalDateOrNull(): LocalDate? =
+        runCatching { LocalDate.parse(trim()) }.getOrNull()
+
+    private fun String?.toNoticeList(): List<String> =
+        when (this) {
+            null -> emptyList()
+            else -> split(",").mapNotNull { it.toNoticeMessage() }
+        }
+
+    private fun String.toNoticeMessage(): String? =
+        when (this) {
+            "acquisitionMerged" -> "Zugang wurde mit einem bestehenden Zugang zusammengeführt."
+            "acquisitionQuantityExceedsLocationQuantity" -> "Die Zugangsgesamtmenge ist größer als die aktuelle Ortsgesamtmenge."
+            else -> null
+        }
+
+    private fun Item.toItemDetailRedirect(
+        id: UUID,
+        notices: List<String> = emptyList(),
+    ): String {
+        val allNotices = buildList {
+            addAll(notices)
+            if (acquisitionQuantityExceedsLocationQuantity()) {
+                add("acquisitionQuantityExceedsLocationQuantity")
+            }
+        }.distinct()
+        val noticeQuery = allNotices.takeIf { it.isNotEmpty() }?.joinToString(prefix = "?notice=", separator = ",").orEmpty()
+        return "redirect:/items/$id$noticeQuery"
+    }
+
+    private fun Item.acquisitionQuantityExceedsLocationQuantity(): Boolean {
+        val acquisitionQuantity = sources.sumOf { it.quantity.value }
+        return acquisitionQuantity > totalQuantity.value
+    }
 
     private fun String.toQuantityIntOrNull(): Int? {
         val normalizedInput = trim()

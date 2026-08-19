@@ -27,6 +27,13 @@ data class ItemRelocationForm(
     var quantity: String = "",
 )
 
+data class ItemAcquisitionForm(
+    var sourceId: String = "",
+    var quantity: String = "",
+    var purchasePrice: String = "",
+    var purchaseDate: String = "",
+)
+
 data class ItemCreatePageView(
     val form: ItemCreateForm,
     val categories: List<SelectOptionView>,
@@ -57,6 +64,7 @@ data class ItemLocationQuantityPageView(
     val itemName: String,
     val form: ItemLocationQuantityForm,
     val locations: List<SelectOptionView>,
+    val locationReadOnly: Boolean = false,
     val errors: List<FormErrorView> = emptyList(),
 ) {
     val globalErrors: List<FormErrorView>
@@ -73,6 +81,21 @@ data class ItemRelocationPageView(
     val sourceQuantity: String,
     val form: ItemRelocationForm,
     val locations: List<SelectOptionView>,
+    val errors: List<FormErrorView> = emptyList(),
+) {
+    val globalErrors: List<FormErrorView>
+        get() = errors.filter { it.field == null }
+
+    fun errorFor(field: String): String? =
+        errors.firstOrNull { it.field == field }?.message
+}
+
+data class ItemAcquisitionPageView(
+    val itemId: String,
+    val acquisitionId: String?,
+    val itemName: String,
+    val form: ItemAcquisitionForm,
+    val sources: List<SelectOptionView>,
     val errors: List<FormErrorView> = emptyList(),
 ) {
     val globalErrors: List<FormErrorView>

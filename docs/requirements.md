@@ -56,9 +56,7 @@ Wenn ein Gegenstand gelöscht wird, werden auch alle Zuordnungen dieses Gegensta
 
 Ein Gegenstand gilt als vorhanden, sobald er im Datenbestand auftaucht. Dafür ist keine Ortszuordnung erforderlich.
 
-Es gibt keinen Lebenszyklus für Gegenstände. Gegenstände, die nicht mehr vorhanden sind, werden aus dem Datenbestand gelöscht oder ihre Mengen werden reduziert.
-
-Abgänge werden nicht als Historie dokumentiert. Der Grund eines Abgangs ist fachlich irrelevant. Verkauf und Verlust werden nicht unterschieden.
+Es gibt keinen Lebenszyklus für Gegenstände. Gegenstände, die nicht mehr vorhanden sind, werden aus dem Datenbestand gelöscht oder ihre Ortsmengen werden reduziert.
 
 Wenn es mehrere Exemplare eines Gegenstands gibt, wird über Zuordnungen festgelegt, wie viele Exemplare sich an welchem Ort befinden.
 
@@ -80,7 +78,7 @@ Zugang und Ort werden separat erfasst. Ein Zugang erhöht nicht automatisch eine
 
 Ortsmengen und Zugangsmengen dürfen voneinander abweichen. Das ist insbesondere für die anfängliche Inventarisierung gewollt. Differenzen können später durch geeignete Reports analysiert werden.
 
-Nur ein Abgang erzeugt eine direkte Reduktion der Ortsmenge.
+Eine direkte Reduktion der Ortsmenge wird in Version 1 über das Ändern des Ortsbestands abgebildet.
 
 Alle Gegenstände werden fachlich gleich behandelt. Es gibt keine Unterscheidung zwischen einzeln erfassten Gegenständen und Gruppen gleichartiger Exemplare.
 
@@ -298,20 +296,6 @@ Wenn nach dem Setzen eines Ortsbestands die Gesamtmenge der Zugänge die aktuell
 
 Wenn die Gesamtmenge der Zugänge kleiner ist als die aktuelle Gesamtmenge an Orten, wird dies nicht kommentiert.
 
-### Abgang erfassen
-
-Ein Abgang reduziert die Menge eines Gegenstands an einem Ort.
-
-Beim Erfassen eines Abgangs wird immer der Ort angegeben, an dem die Menge reduziert wird.
-
-Wenn die Abgangsmenge größer ist als die Menge am angegebenen Ort, ist dies ein fachlicher Fehler.
-
-Der Grund des Abgangs wird nicht erfasst.
-
-Abgänge und Zugänge sind fachlich unabhängig. Ein Abgang verändert keine Zugänge.
-
-Wenn nach einem Abgang die Gesamtmenge der Zugänge die aktuelle Gesamtmenge an Orten übersteigt, wird der Benutzer darauf hingewiesen.
-
 ### Umlagerung erfassen
 
 Eine Umlagerung verschiebt Exemplare eines Gegenstands von einem Quellort an einen Zielort.
@@ -337,6 +321,8 @@ Ein Zugang erfasst, dass Exemplare eines Gegenstands über eine Bezugsquelle hin
 Für einen Zugang werden Gegenstand, Bezugsquelle und Menge angegeben.
 
 Kaufdatum und Kaufpreis werden ebenfalls erfasst; beide Angaben sind optional. Ein unbekannter Kaufpreis wird mit 0 abgebildet.
+
+Wenn ein Kaufdatum angegeben wird, muss es auf dem aktuellen Datum oder in der Vergangenheit liegen.
 
 Ein Zugang verändert keine Ortsmengen.
 
@@ -447,7 +433,7 @@ Fachliche Fehler werden unterscheidbar modelliert.
 Folgende fachliche Fehler sind für Version 1 relevant:
 
 - Name bereits vergeben: Beim Anlegen oder Umbenennen von Gegenstand, Ort, Kategorie oder Bezugsquelle existiert der normalisierte Name bereits.
-- Menge zu groß: Abgang oder Umlagerung überschreitet die aktuelle Menge am Quellort.
+- Menge zu groß: Eine Umlagerung überschreitet die aktuelle Menge am Quellort.
 - Ungültige Menge: Eine Menge verletzt die fachlichen Regeln, z. B. Zugang 0, neuer Ortsbestand 0 oder negative Menge.
 - Stammdatensatz wird noch verwendet: Ort, Kategorie oder Bezugsquelle soll gelöscht werden, wird aber noch verwendet.
 
@@ -455,7 +441,7 @@ Folgende Situationen sind keine fachlichen Fehler:
 
 - Eine Suche oder Filterung findet keine Gegenstände. In diesem Fall ist die Ergebnisliste leer.
 - Eine referenzierte Kategorie, ein referenzierter Ort oder eine referenzierte Bezugsquelle fehlt nicht während der normalen Bedienung, da diese Werte ausschließlich aus Stammdaten ausgewählt werden.
-- Ein Abgang oder eine Umlagerung von einem nicht zugeordneten Ort ist während der normalen Bedienung nicht möglich, da dafür eine bestehende Ortszuordnung ausgewählt wird.
+- Eine Umlagerung von einem nicht zugeordneten Ort ist während der normalen Bedienung nicht möglich, da dafür eine bestehende Ortszuordnung ausgewählt wird.
 
 Folgende Hinweise sind für Version 1 relevant:
 
@@ -474,7 +460,6 @@ Für Version 1 sind folgende Use Cases vorgesehen:
 - `GetItemDetails`: Detailansicht eines Gegenstands mit Ortsbeständen und Zugängen laden.
 - `SearchItems`: Hauptliste mit Filtern nach Name, Ort, Bezugsquelle und Kategorie laden.
 - `SetItemLocationQuantity`: Absolute Menge eines Gegenstands an einem Ort setzen.
-- `RemoveFromLocation`: Menge eines Gegenstands an einem Ort durch Abgang reduzieren.
 - `RelocateItem`: Menge eines Gegenstands von einem Quellort an einen Zielort umlagern.
 - `AddItemAcquisition`: Zugang eines Gegenstands erfassen.
 - `UpdateItemAcquisition`: Zugang eines Gegenstands bearbeiten.
@@ -528,7 +513,7 @@ Domänenobjekte werden im Code englisch benannt. Die Anwendungsoberfläche bleib
 | Bezugsquellenname | Source Name | Fachlich eindeutiger Name einer Bezugsquelle. Die Eindeutigkeit ist unabhängig von Groß- und Kleinschreibung und wird später im Application-Ring über den normalisierten Namen durchgesetzt. |
 | Bezugsquellen-Details | Source Details | Optionale Freitextangabe an einer Bezugsquelle für Adresse, URL oder sonstige formlose Informationen. |
 | Zugang | Acquisition | Fachlicher Vorgang, durch den Exemplare eines Gegenstands durch Kauf oder Geschenk hinzukommen. Dabei wird eine Gegenstand-Bezugsquelle-Zuordnung angelegt oder die Menge einer bestehenden fachlich gleichen Zuordnung erhöht. |
-| Abgang | Removal | Fachlicher Vorgang, durch den Exemplare eines Gegenstands nicht mehr im Besitz sind. Der Grund ist fachlich irrelevant. Ein Abgang reduziert direkt die Ortsmenge und wird nicht als Historie dokumentiert. |
+| Abgang | Removal | Fachlicher Vorgang, durch den Exemplare eines Gegenstands nicht mehr im Besitz sind. In Version 1 wird dies über das Ändern des Ortsbestands abgebildet und nicht als eigene Historie dokumentiert. |
 | Gegenstand-Bezugsquelle-Zuordnung | Item Source | Zuordnung eines Gegenstands zu einer Bezugsquelle. An dieser Zuordnung hängen Menge, Kaufpreis und Kaufdatum. Mehrere Zuordnungen zwischen demselben Gegenstand und derselben Bezugsquelle sind erlaubt, wenn sich Datum, Kaufpreis oder beides unterscheidet. Fachlich identische Zuordnungen sind nicht erlaubt. |
 | Kaufpreis | Purchase Price | Preisangabe an der Zuordnung zwischen Gegenstand und Bezugsquelle. Kaufpreise beziehen sich immer auf ein Stück. Der Wert 0 bedeutet „unbekannt“ und nicht „kostenlos“. |
 | Kaufdatum | Purchase Date | Datum des Kaufs, sofern bekannt. |
