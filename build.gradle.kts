@@ -42,7 +42,7 @@ dependencies {
     implementation("org.jmolecules:kmolecules-ddd:2.0.1")
 
     runtimeOnly("com.h2database:h2")
-    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
 
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
     testImplementation("io.mockk:mockk:1.14.11")

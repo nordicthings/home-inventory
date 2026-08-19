@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 @TestPropertySource(
     properties = [
         // Uses an isolated database because other persistence adapter tests delete table contents.
-        "spring.datasource.url=jdbc:h2:mem:home_inventory_seed;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+        "spring.datasource.url=jdbc:h2:mem:home_inventory_seed;MODE=MariaDB;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
     ],
 )
 class InventoryMasterDataSeedTest {

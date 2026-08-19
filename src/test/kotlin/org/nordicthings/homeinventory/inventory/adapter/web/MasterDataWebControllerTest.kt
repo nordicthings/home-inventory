@@ -31,7 +31,7 @@ import kotlin.test.assertNotNull
 )
 @TestPropertySource(
     properties = [
-        "spring.datasource.url=jdbc:h2:mem:home_inventory_master_data_web;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+        "spring.datasource.url=jdbc:h2:mem:home_inventory_master_data_web;MODE=MariaDB;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
     ],
 )
 class MasterDataWebControllerTest {

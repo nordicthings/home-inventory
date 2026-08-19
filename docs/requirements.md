@@ -517,6 +517,7 @@ Domänenobjekte werden im Code englisch benannt. Die Anwendungsoberfläche bleib
 ## Später geplant
 
 - Betrieb auf einer Synology-NAS im Heimnetz
+- MariaDB als produktive Datenbank
 - Nutzung durch Jens und Irena
 - Fotos
 - PDF-Rechnungen
