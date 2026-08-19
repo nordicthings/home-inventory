@@ -495,6 +495,7 @@ class ItemWebControllerTest {
         assertContains(detailResponse.body(), "Küche")
         assertContains(detailResponse.body(), "1.000")
         assertContains(detailResponse.body(), """href="/items/${item.id.value}/locations/${kitchen.id.value}/edit"""")
+        assertContains(detailResponse.body(), """href="/items/${item.id.value}/locations/${kitchen.id.value}/relocate"""")
         assertContains(detailResponse.body(), """action="/items/${item.id.value}/locations/${kitchen.id.value}/delete"""")
     }
 
@@ -612,6 +613,188 @@ class ItemWebControllerTest {
         assertEquals(200, response.statusCode())
         assertContains(response.body(), "<h1>Bestand erfassen</h1>")
         assertContains(response.body(), "Ort wurde nicht gefunden.")
+    }
+
+    @Test
+    fun `renders item relocation form for existing source location quantity`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val livingRoom = assertNotNull(locationRepository.findByNormalizedName("wohnzimmer"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Relocation-Form-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(1000))
+
+        val response = get("/items/${item.id.value}/locations/${kitchen.id.value}/relocate")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Umlagerung erfassen</h1>")
+        assertContains(response.body(), "Relocation-Form-Laptop")
+        assertContains(response.body(), "Quellort")
+        assertContains(response.body(), "Küche")
+        assertContains(response.body(), "Aktueller Bestand")
+        assertContains(response.body(), "1.000")
+        assertContains(response.body(), "Zielort auswählen")
+        assertContains(response.body(), """value="${livingRoom.id.value}"""")
+        assertContains(response.body(), """action="/items/${item.id.value}/relocations"""")
+        assertContains(response.body(), "Umlagerung speichern")
+    }
+
+    @Test
+    fun `relocates item quantity and redirects to detail page`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val livingRoom = assertNotNull(locationRepository.findByNormalizedName("wohnzimmer"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Relocation-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(5))
+        itemUseCase.setLocationQuantity(item.id, livingRoom.id, Quantity.of(1))
+
+        val response = post(
+            "/items/${item.id.value}/relocations",
+            mapOf(
+                "sourceLocationId" to kitchen.id.value.toString(),
+                "targetLocationId" to livingRoom.id.value.toString(),
+                "quantity" to "2",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        assertEquals("/items/${item.id.value}", URI.create(response.headers().firstValue("location").orElseThrow()).path)
+        val changedItem = assertNotNull(itemRepository.findById(item.id))
+        assertEquals(Quantity.of(3), changedItem.locationQuantities[kitchen.id])
+        assertEquals(Quantity.of(3), changedItem.locationQuantities[livingRoom.id])
+    }
+
+    @Test
+    fun `relocation removes source location quantity when source reaches zero`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val livingRoom = assertNotNull(locationRepository.findByNormalizedName("wohnzimmer"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Relocation-Empty-Source-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(2))
+
+        val response = post(
+            "/items/${item.id.value}/relocations",
+            mapOf(
+                "sourceLocationId" to kitchen.id.value.toString(),
+                "targetLocationId" to livingRoom.id.value.toString(),
+                "quantity" to "2",
+            ),
+        )
+
+        assertEquals(302, response.statusCode())
+        val changedItem = assertNotNull(itemRepository.findById(item.id))
+        assertEquals(null, changedItem.locationQuantities[kitchen.id])
+        assertEquals(Quantity.of(2), changedItem.locationQuantities[livingRoom.id])
+    }
+
+    @Test
+    fun `shows validation errors for invalid item relocation form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Invalid-Relocation-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(2))
+
+        val response = post(
+            "/items/${item.id.value}/relocations",
+            mapOf(
+                "sourceLocationId" to kitchen.id.value.toString(),
+                "targetLocationId" to kitchen.id.value.toString(),
+                "quantity" to "0",
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Umlagerung erfassen</h1>")
+        assertContains(response.body(), "Zielort muss sich vom Quellort unterscheiden.")
+        assertContains(response.body(), "Menge muss eine positive ganze Zahl sein.")
+    }
+
+    @Test
+    fun `shows validation error when relocation quantity exceeds source quantity`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val livingRoom = assertNotNull(locationRepository.findByNormalizedName("wohnzimmer"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Excessive-Relocation-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(2))
+
+        val response = post(
+            "/items/${item.id.value}/relocations",
+            mapOf(
+                "sourceLocationId" to kitchen.id.value.toString(),
+                "targetLocationId" to livingRoom.id.value.toString(),
+                "quantity" to "3",
+            ),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Umlagerung erfassen</h1>")
+        assertContains(response.body(), "Menge darf den Bestand am Quellort nicht überschreiten.")
+    }
+
+    @Test
+    fun `returns not found for missing item relocation form`() {
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+
+        val response = get("/items/${UUID.randomUUID()}/locations/${kitchen.id.value}/relocate")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found for missing source location quantity relocation form`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Missing-Relocation-Source-Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+
+        val response = get("/items/${item.id.value}/locations/${kitchen.id.value}/relocate")
+
+        assertEquals(404, response.statusCode())
+    }
+
+    @Test
+    fun `returns not found when relocating missing item`() {
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val livingRoom = assertNotNull(locationRepository.findByNormalizedName("wohnzimmer"))
+
+        val response = post(
+            "/items/${UUID.randomUUID()}/relocations",
+            mapOf(
+                "sourceLocationId" to kitchen.id.value.toString(),
+                "targetLocationId" to livingRoom.id.value.toString(),
+                "quantity" to "1",
+            ),
+        )
+
+        assertEquals(404, response.statusCode())
     }
 
     @Test

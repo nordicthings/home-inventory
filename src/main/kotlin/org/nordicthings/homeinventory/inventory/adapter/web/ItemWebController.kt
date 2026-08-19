@@ -146,6 +146,20 @@ class ItemWebController(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
 
+    @GetMapping("/items/{id}/locations/{locationId}/relocate")
+    fun relocateItemForm(
+        @PathVariable id: UUID,
+        @PathVariable locationId: UUID,
+        model: Model,
+    ): String =
+        renderRelocationForm(
+            id = id,
+            sourceLocationId = locationId,
+            form = ItemRelocationForm(sourceLocationId = locationId.toString()),
+            errors = emptyList(),
+            model = model,
+        )
+
     @PostMapping("/items")
     fun createItem(
         @ModelAttribute form: ItemCreateForm,
@@ -270,6 +284,47 @@ class ItemWebController(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
 
+    @PostMapping("/items/{id}/relocations")
+    fun relocateItem(
+        @PathVariable id: UUID,
+        @ModelAttribute form: ItemRelocationForm,
+        model: Model,
+    ): String {
+        val sourceLocationId = form.sourceLocationId.toUuidOrNull()
+        if (sourceLocationId == null) {
+            return renderRelocationForm(
+                id = id,
+                sourceLocationId = null,
+                form = form,
+                errors = listOf(FormErrorView("sourceLocationId", "Quellort ist ungültig.")),
+                model = model,
+            )
+        }
+
+        return try {
+            val errors = validateRelocationForm(id, form)
+            if (errors.isNotEmpty()) {
+                return renderRelocationForm(id, sourceLocationId, form, errors, model)
+            }
+            itemUseCase.relocateItem(
+                id = ItemId(id),
+                sourceLocationId = LocationId(sourceLocationId),
+                targetLocationId = LocationId(UUID.fromString(form.targetLocationId)),
+                quantity = Quantity.of(parseQuantity(form.quantity)),
+            )
+            "redirect:/items/$id"
+        } catch (exception: EntityNotFoundException) {
+            if (exception.message?.startsWith("Item does not exist") == true) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+            }
+            renderRelocationForm(id, sourceLocationId, form, listOf(FormErrorView("targetLocationId", "Zielort wurde nicht gefunden.")), model)
+        } catch (exception: IllegalArgumentException) {
+            renderRelocationForm(id, sourceLocationId, form, listOf(FormErrorView(null, "Die Eingaben sind ungültig.")), model)
+        } catch (exception: IllegalStateException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Bestand wurde nicht gefunden.", exception)
+        }
+    }
+
     private fun createPageView(
         name: String?,
         categoryId: String?,
@@ -350,6 +405,52 @@ class ItemWebController(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
 
+    private fun createRelocationPageView(
+        itemId: UUID,
+        itemName: String,
+        sourceLocationName: String,
+        sourceQuantity: Int,
+        form: ItemRelocationForm,
+        errors: List<FormErrorView> = emptyList(),
+    ): ItemRelocationPageView =
+        ItemRelocationPageView(
+            itemId = itemId.toString(),
+            itemName = itemName,
+            sourceLocationName = sourceLocationName,
+            sourceQuantity = sourceQuantity.formatIntegerForView(),
+            form = form,
+            locations = locationOptions(),
+            errors = errors,
+        )
+
+    private fun renderRelocationForm(
+        id: UUID,
+        sourceLocationId: UUID?,
+        form: ItemRelocationForm,
+        errors: List<FormErrorView>,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            val sourceLocationQuantity = sourceLocationId?.let { sourceId ->
+                details.locationQuantities.firstOrNull { it.locationId.value == sourceId }
+            } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Bestand wurde nicht gefunden.")
+            model.addAttribute(
+                "page",
+                createRelocationPageView(
+                    itemId = id,
+                    itemName = details.name.value,
+                    sourceLocationName = sourceLocationQuantity.locationName.value,
+                    sourceQuantity = sourceLocationQuantity.quantity.value,
+                    form = form,
+                    errors = errors,
+                ),
+            )
+            "items/relocation"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
     private fun validateCreateForm(form: ItemCreateForm): List<FormErrorView> =
         validateItemForm(
             name = form.name,
@@ -379,6 +480,58 @@ class ItemWebController(
                 val amount = quantity.toQuantityIntOrNull()
                 if (amount == null || amount <= 0) {
                     add(FormErrorView("quantity", "Menge muss eine positive ganze Zahl sein."))
+                }
+            }
+        }
+
+    private fun validateRelocationForm(id: UUID, form: ItemRelocationForm): List<FormErrorView> =
+        buildList {
+            val sourceLocationId = if (form.sourceLocationId.isBlank()) {
+                add(FormErrorView("sourceLocationId", "Quellort ist erforderlich."))
+                null
+            } else {
+                val parsedSourceLocationId = form.sourceLocationId.toUuidOrNull()
+                if (parsedSourceLocationId == null) {
+                    add(FormErrorView("sourceLocationId", "Quellort ist ungültig."))
+                }
+                parsedSourceLocationId
+            }
+
+            val targetLocationId = if (form.targetLocationId.isBlank()) {
+                add(FormErrorView("targetLocationId", "Zielort ist erforderlich."))
+                null
+            } else {
+                val parsedTargetLocationId = form.targetLocationId.toUuidOrNull()
+                if (parsedTargetLocationId == null) {
+                    add(FormErrorView("targetLocationId", "Zielort ist ungültig."))
+                }
+                parsedTargetLocationId
+            }
+
+            if (sourceLocationId != null && targetLocationId != null && sourceLocationId == targetLocationId) {
+                add(FormErrorView("targetLocationId", "Zielort muss sich vom Quellort unterscheiden."))
+            }
+
+            val quantity = form.quantity.trim()
+            val amount = if (quantity.isBlank()) {
+                add(FormErrorView("quantity", "Menge ist erforderlich."))
+                null
+            } else {
+                val parsedAmount = quantity.toQuantityIntOrNull()
+                if (parsedAmount == null || parsedAmount <= 0) {
+                    add(FormErrorView("quantity", "Menge muss eine positive ganze Zahl sein."))
+                }
+                parsedAmount
+            }
+
+            if (sourceLocationId != null && amount != null && amount > 0) {
+                val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+                val sourceQuantity = details.locationQuantities
+                    .firstOrNull { it.locationId.value == sourceLocationId }
+                    ?.quantity
+                    ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Bestand wurde nicht gefunden.")
+                if (amount > sourceQuantity.value) {
+                    add(FormErrorView("quantity", "Menge darf den Bestand am Quellort nicht überschreiten."))
                 }
             }
         }

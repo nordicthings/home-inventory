@@ -83,6 +83,8 @@
                         <div class="row-actions">
                             <a class="table-link"
                                th:href="@{/items/{id}/locations/{locationId}/edit(id=${page.id},locationId=${locationQuantity.locationId})}">Ändern</a>
+                            <a class="table-link"
+                               th:href="@{/items/{id}/locations/{locationId}/relocate(id=${page.id},locationId=${locationQuantity.locationId})}">Umlagern</a>
                             <form method="post"
                                   th:action="@{/items/{id}/locations/{locationId}/delete(id=${page.id},locationId=${locationQuantity.locationId})}">
                                 <button class="link-button link-button--danger" type="submit">Entfernen</button>
