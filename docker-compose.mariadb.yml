@@ -1,4 +1,4 @@
-  services:
+services:
   mariadb:
     image: ${MARIADB_IMAGE}
     environment:
