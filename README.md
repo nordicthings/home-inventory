@@ -41,6 +41,69 @@ docker compose -f docker-compose.mariadb.yml down
 
 Mit `down -v` werden zusätzlich die lokalen Datenbank-Volumes gelöscht.
 
+## Docker-Image der Anwendung
+
+Das Image wird lokal aus dem bereits gebauten Spring-Boot-JAR erzeugt. Der Container startet standardmäßig mit dem Spring-Profil `mariadb`.
+
+### Image bauen:
+
+```bash
+./scripts/build-image.sh
+```
+
+Optional mit explizitem Namen und/oder Tag und/oder Plattform (das Image wird zusätzlich IMMER mit `latest`getaggt):
+
+```bash
+IMAGE_NAME=home-inventory IMAGE_TAG=0.1.0 PLATFORM=linux/amd64 ./scripts/build-image.sh
+```
+
+- linux/amd64 ist für Intel-/AMD-Prozessoren
+- linux/arm64 für ARM-Prozessoren (z.B. Apple Silicon).
+
+Defaults sind:
+- IMAGE_NAME=home-inventory
+- IMAGE_TAG=0.1.0
+- PLATFORM=linux/amd64
+
+Das Image wird dann in der lokalen Docker-Registry gespeichert.
+
+Um es auf das NAS zu bringen, muss es aus der lokalen Registry exportiert werden:
+
+```bash
+docker save home-inventory:0.1.0 -o home-inventory-0.1.0.tar
+```
+Das Image kann nun auf dem NAS geladen werden.
+
+### Container lokal starten:
+Sofern der Container für die lokale Host-Architektur passt, kann man ihn gegen eine vorhandene MariaDB starten. 
+Die Umgebungsvariablen `DB_HOST`, `DB_USERNAME` und `DB_PASSWORD` müssen lokal angelegt werden.
+
+```bash
+docker run --rm \
+  --name home-inventory \
+  -p 8080:8080 \
+  -e DB_HOST=$DB_HOST \
+  -e DB_PORT=3306 \
+  -e DB_NAME=home_inventory \
+  -e DB_USERNAME=$DB_USERNAME \
+  -e DB_PASSWORD=$DB_PASSWORD \
+  home-inventory:0.1.0
+```
+
+Alternativ per Docker Compose, wenn die Datenbank bereits auf dem NAS läuft:
+
+```bash
+APP_IMAGE=home-inventory:0.1.0 \
+DB_HOST=<nas-hostname-oder-ip> \
+DB_PORT=3306 \
+DB_NAME=home_inventory \
+DB_USERNAME=<db-user> \
+DB_PASSWORD=<db-passwort> \
+docker compose -f docker-compose.app.yml up -d
+```
+
+Die Compose-Datei verwendet standardmäßig das feste Docker-Subnetz `172.30.10.0/24` und die feste Container-IP `172.30.10.10`. Der MariaDB-User kann dafür z. B. auf `'appuser'@'172.30.10.%'` oder enger auf `'appuser'@'172.30.10.10'` berechtigt werden.
+
 ## Anlegen einer DB auf dem Synology NAS
 Eine SSH-Session auf dem NAS starten. Bei Bedarf vorher den ssh-Dienst starten.
 
@@ -58,15 +121,20 @@ Danach mit mysql-Client auf dem NAS eine Verbindung herstellen:
 `create home_inventory;`
 
 ### Benutzer anlegen
-Der Benutzer wird eingeschränkt auf Verbindungen aus dem lokalen Netz:
+
+Um aus dem lokalen Netz auf die produktive MariaDB zuzugreifen, wird ein DB-User für den entsprecdhenden IO-Adressbereich benötigt:
 
 `create user 'appuser'@'192.168.178.%' identified by 'mein_passwort';`
 
-Anschließend dem Applikations-User die erforderlichen DDL-Rechte zuweisen:
+Für den auf dem NAS laufenden Docker-Container ist ein weiterer DB-User erforderlich
+
+`create user 'appuser'@'172.30.10.%' identified by 'mein_passwort';`
+
+Anschließend dem Applikations-User die erforderlichen DDL-Rechte zuweisen. Beachte, dass die Rechte sowohl für den lokalen Netz-User als auch für den Container-User gesetzt werden müssen. Hier als Beispiel für den User aus dem lokalen Netz:
 
 ```sql
 -- Struktur-Operationen auf allen Tabellen in einer DB
-GRANT CREATE, ALTER, DROP, INDEX, REFERENCES, CREATE TEMPORARY TABLES
+GRANT SELECT, DELETE, UPDATE, INSERT, CREATE, ALTER, DROP, INDEX, REFERENCES, CREATE TEMPORARY TABLES
 ON home_inventory.*
 TO 'appuser'@'192.168.178.%';
 

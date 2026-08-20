@@ -1,0 +1,25 @@
+services:
+  home-inventory:
+    image: ${APP_IMAGE:-home-inventory:0.1.0}
+    container_name: home-inventory
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: mariadb
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-home_inventory}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    networks:
+      home-inventory-app:
+        ipv4_address: ${APP_IPV4:-172.30.10.10}
+
+networks:
+  home-inventory-app:
+    name: home-inventory-app
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${APP_SUBNET:-172.30.10.0/24}
