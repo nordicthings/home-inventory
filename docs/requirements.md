@@ -26,12 +26,29 @@ Noch nicht enthalten:
 
 ## Version 2
 
-Für Version 2 vorgemerkt:
+Die UI-Verbesserungen für numerische Eingaben sind bereits umgesetzt und gehören nicht mehr zum offenen Version-2-Backlog.
 
-- Numerische Eingabefelder sollen falsche Zeichen möglichst bereits während der Eingabe verhindern.
-- Geldwerte sollen clientseitig nur im deutschen Zahlenformat erfasst werden können, z. B. `1.234,56`.
-- Ganzzahlige Mengen sollen clientseitig nur als positive ganze Zahlen mit optionalem deutschem Tausenderpunkt erfasst werden können, z. B. `1.000`.
-- Serverseitige Validierung bleibt unabhängig davon weiterhin verbindlich.
+Für Version 2 geplant:
+
+- An einen Zugang soll eine PDF-Rechnung angehängt werden können.
+- Beim Anhängen einer Rechnung soll der Benutzer über einen Dateiauswahldialog eine PDF-Datei auswählen und in die Anwendung hochladen können.
+- Hochgeladene Rechnungen sollen zunächst in der Anwendung zum Download angeboten werden.
+- In einem späteren Schritt innerhalb von Version 2 soll eine Vorschau der PDF-Rechnung direkt in der Anwendung möglich sein.
+- Über den Datenbestand soll ein Report erstellt werden können.
+- Der Report soll die aktuell gefilterten Gegenstände berücksichtigen.
+- Der Report soll die gefilterten Gegenstände mit ausgewählten Details auflisten.
+- Der Report soll eine Gesamtsumme über die gelisteten Gegenstände ausweisen.
+- Die Gegenstandsliste soll sortiert werden können.
+- Für Version 2 reicht es aus, die Gegenstandsliste nach genau einer Spalte gleichzeitig zu sortieren.
+- Filter- und Sortiereinstellungen der Gegenstandsliste sollen erhalten bleiben, wenn der Benutzer von der Liste auf eine Detailseite wechselt, dort Änderungen vornimmt und anschließend zur Liste zurückkehrt.
+- Der obere Bereich der Gegenstandsliste soll beim Scrollen sichtbar bleiben, mindestens die Tabellenkopfzeile.
+- Die Anwendung soll ein Favicon bekommen.
+
+Nicht Teil von Version 2:
+
+- Benutzerkonten werden bis auf Weiteres nicht eingeführt, da die Anwendung nur im lokalen Heimnetz sichtbar ist und aktuell keine spezifischen Berechtigungen benötigt werden.
+- Mobile Nutzung wird auf Version 3 verschoben.
+- Fotos werden auf Version 3 verschoben.
 
 ## Felder
 
@@ -516,11 +533,6 @@ Domänenobjekte werden im Code englisch benannt. Die Anwendungsoberfläche bleib
 
 ## Später geplant
 
-- Betrieb auf einer Synology-NAS im Heimnetz
-- MariaDB als produktive Datenbank
-- Nutzung durch Jens und Irena
-- Fotos
-- PDF-Rechnungen
-- Benutzerkonten
 - Mobile Nutzung
-- Auswertungen
+- Fotos
+- Genaue Position am Ort
