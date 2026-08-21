@@ -462,6 +462,34 @@ h2 {
     text-transform: uppercase;
 }
 
+.sort-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.sort-link:hover {
+    color: var(--primary);
+}
+
+.sort-link--number {
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.sort-link--active {
+    color: var(--text);
+}
+
+.sort-link__indicator {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: none;
+}
+
 .data-table tr:last-child td {
     border-bottom: 0;
 }

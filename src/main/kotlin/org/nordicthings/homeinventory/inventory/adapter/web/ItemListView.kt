@@ -9,6 +9,7 @@ import java.util.Locale
 
 data class ItemListPageView(
     val filter: ItemFilterView,
+    val sort: ItemSortView,
     val categories: List<SelectOptionView>,
     val locations: List<SelectOptionView>,
     val sources: List<SelectOptionView>,
@@ -21,6 +22,17 @@ data class ItemFilterView(
     val locationId: String = "",
     val sourceId: String = "",
 )
+
+data class ItemSortView(
+    val field: String = "name",
+    val direction: String = "asc",
+) {
+    fun nextDirectionFor(candidate: String): String =
+        if (field == candidate && direction == "asc") "desc" else "asc"
+
+    fun indicatorFor(candidate: String): String =
+        if (field != candidate) "" else if (direction == "asc") "aufsteigend" else "absteigend"
+}
 
 data class SelectOptionView(
     val id: String,

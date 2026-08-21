@@ -83,6 +83,18 @@ class ItemWebControllerTest {
     }
 
     @Test
+    fun `renders sort controls and keeps sort parameters in filter form`() {
+        val response = get("/items?sort=category&direction=desc")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), """<input type="hidden" name="sort" value="category">""")
+        assertContains(response.body(), """<input type="hidden" name="direction" value="desc">""")
+        assertContains(response.body(), "absteigend")
+        assertContains(response.body(), "sort=quantity")
+        assertContains(response.body(), "direction=asc")
+    }
+
+    @Test
     fun `renders item create form`() {
         val response = get("/items/new")
 

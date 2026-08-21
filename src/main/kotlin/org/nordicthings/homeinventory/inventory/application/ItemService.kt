@@ -18,6 +18,7 @@ import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import org.nordicthings.homeinventory.inventory.domain.Quantity
 import org.nordicthings.homeinventory.inventory.domain.SourceId
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Locale
 
@@ -65,7 +66,7 @@ class ItemService(
                 locationId = filter.locationId,
                 sourceId = filter.sourceId,
             ),
-        )
+        ).sortedBy(filter.sort)
 
     override fun createItem(
         name: ItemName,
@@ -247,3 +248,34 @@ class ItemService(
         )
     }
 }
+
+private fun List<ItemListEntry>.sortedBy(sort: ItemListSort): List<ItemListEntry> {
+    val directionFactor = if (sort.direction == SortDirection.ASCENDING) 1 else -1
+    return sortedWith { left, right ->
+        val primary = when (sort.field) {
+            ItemListSortField.NAME -> left.name.normalize().compareTo(right.name.normalize())
+            ItemListSortField.CATEGORY -> left.categoryName.normalize().compareTo(right.categoryName.normalize())
+            ItemListSortField.TOTAL_QUANTITY -> left.totalQuantity.value.compareTo(right.totalQuantity.value)
+            ItemListSortField.AVERAGE_VALUE -> compareKnownMoney(left.averageValue?.amount, right.averageValue?.amount, sort.direction)
+            ItemListSortField.TOTAL_VALUE -> compareKnownMoney(left.totalValue?.amount, right.totalValue?.amount, sort.direction)
+        }
+        if (primary != 0) {
+            when (sort.field) {
+                ItemListSortField.AVERAGE_VALUE,
+                ItemListSortField.TOTAL_VALUE,
+                -> primary
+                else -> primary * directionFactor
+            }
+        } else {
+            left.name.normalize().compareTo(right.name.normalize())
+        }
+    }
+}
+
+private fun compareKnownMoney(left: BigDecimal?, right: BigDecimal?, direction: SortDirection): Int =
+    when {
+        left == null && right == null -> 0
+        left == null -> 1
+        right == null -> -1
+        else -> left.compareTo(right) * if (direction == SortDirection.ASCENDING) 1 else -1
+    }

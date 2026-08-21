@@ -2,7 +2,10 @@ package org.nordicthings.homeinventory.inventory.adapter.web
 
 import org.nordicthings.homeinventory.inventory.application.DuplicateNameException
 import org.nordicthings.homeinventory.inventory.application.EntityNotFoundException
+import org.nordicthings.homeinventory.inventory.application.ItemListSort
+import org.nordicthings.homeinventory.inventory.application.ItemListSortField
 import org.nordicthings.homeinventory.inventory.application.SearchItemsFilter
+import org.nordicthings.homeinventory.inventory.application.SortDirection
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetCategoryListUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetItemDetailsUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetLocationListUseCase
@@ -46,11 +49,14 @@ class ItemWebController(
         @RequestParam(name = "categoryId", required = false) categoryId: String?,
         @RequestParam(name = "locationId", required = false) locationId: String?,
         @RequestParam(name = "sourceId", required = false) sourceId: String?,
+        @RequestParam(name = "sort", required = false) sort: String?,
+        @RequestParam(name = "direction", required = false) direction: String?,
         model: Model,
     ): String {
-        val page = createPageView(name, categoryId, locationId, sourceId)
+        val page = createPageView(name, categoryId, locationId, sourceId, sort, direction)
         model.addAttribute("page", page)
         model.addAttribute("items", page.items)
+        model.addAttribute("sort", page.sort)
         return "items/list"
     }
 
@@ -60,9 +66,14 @@ class ItemWebController(
         @RequestParam(name = "categoryId", required = false) categoryId: String?,
         @RequestParam(name = "locationId", required = false) locationId: String?,
         @RequestParam(name = "sourceId", required = false) sourceId: String?,
+        @RequestParam(name = "sort", required = false) sort: String?,
+        @RequestParam(name = "direction", required = false) direction: String?,
         model: Model,
     ): String {
-        model.addAttribute("items", searchItems(name, categoryId, locationId, sourceId).map { it.toRowView() })
+        val page = createPageView(name, categoryId, locationId, sourceId, sort, direction)
+        model.addAttribute("page", page)
+        model.addAttribute("items", page.items)
+        model.addAttribute("sort", page.sort)
         return "items/_table :: itemTable"
     }
 
@@ -479,6 +490,8 @@ class ItemWebController(
         categoryId: String?,
         locationId: String?,
         sourceId: String?,
+        sort: String?,
+        direction: String?,
     ): ItemListPageView =
         ItemListPageView(
             filter = ItemFilterView(
@@ -487,13 +500,17 @@ class ItemWebController(
                 locationId = locationId.orEmpty(),
                 sourceId = sourceId.orEmpty(),
             ),
+            sort = ItemSortView(
+                field = sort.toItemSortField().requestValue,
+                direction = direction.toSortDirection().requestValue,
+            ),
             categories = getCategoryListUseCase.getCategoryList()
                 .map { SelectOptionView(it.id.value.toString(), it.name.value) },
             locations = getLocationListUseCase.getLocationList()
                 .map { SelectOptionView(it.id.value.toString(), it.name.value) },
             sources = getSourceListUseCase.getSourceList()
                 .map { SelectOptionView(it.id.value.toString(), it.name.value) },
-            items = searchItems(name, categoryId, locationId, sourceId).map { it.toRowView() },
+            items = searchItems(name, categoryId, locationId, sourceId, sort, direction).map { it.toRowView() },
         )
 
     private fun categoryOptions(): List<SelectOptionView> =
@@ -793,6 +810,8 @@ class ItemWebController(
         categoryId: String?,
         locationId: String?,
         sourceId: String?,
+        sort: String?,
+        direction: String?,
     ) =
         searchItemsUseCase.searchItems(
             SearchItemsFilter(
@@ -800,11 +819,45 @@ class ItemWebController(
                 categoryId = categoryId.toCategoryIdOrNull(),
                 locationId = locationId.toLocationIdOrNull(),
                 sourceId = sourceId.toSourceIdOrNull(),
+                sort = ItemListSort(
+                    field = sort.toItemSortField(),
+                    direction = direction.toSortDirection(),
+                ),
             ),
         )
 
     private fun parseEstimatedValue(value: String) =
         parseMoneyValue(value)
+
+    private fun String?.toItemSortField(): ItemListSortField =
+        when (this) {
+            "category" -> ItemListSortField.CATEGORY
+            "quantity" -> ItemListSortField.TOTAL_QUANTITY
+            "averageValue" -> ItemListSortField.AVERAGE_VALUE
+            "totalValue" -> ItemListSortField.TOTAL_VALUE
+            else -> ItemListSortField.NAME
+        }
+
+    private fun String?.toSortDirection(): SortDirection =
+        when (this) {
+            "desc" -> SortDirection.DESCENDING
+            else -> SortDirection.ASCENDING
+        }
+
+    private val ItemListSortField.requestValue: String
+        get() = when (this) {
+            ItemListSortField.NAME -> "name"
+            ItemListSortField.CATEGORY -> "category"
+            ItemListSortField.TOTAL_QUANTITY -> "quantity"
+            ItemListSortField.AVERAGE_VALUE -> "averageValue"
+            ItemListSortField.TOTAL_VALUE -> "totalValue"
+        }
+
+    private val SortDirection.requestValue: String
+        get() = when (this) {
+            SortDirection.ASCENDING -> "asc"
+            SortDirection.DESCENDING -> "desc"
+        }
 
     private fun String?.toNoticeList(): List<String> =
         when (this) {

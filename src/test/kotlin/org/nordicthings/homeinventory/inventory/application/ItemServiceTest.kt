@@ -123,6 +123,28 @@ class ItemServiceTest {
     }
 
     @Test
+    fun `sorts searched items by total value descending with unknown values last`() {
+        val categoryId = CategoryId.newId()
+        val result = listOf(
+            itemListEntry("Monitor", categoryId, totalValue = MonetaryValue.of("300")),
+            itemListEntry("Kabel", categoryId, totalValue = null),
+            itemListEntry("Laptop", categoryId, totalValue = MonetaryValue.of("1600")),
+        )
+        every { itemRepository.search(ItemSearchCriteria()) } returns result
+
+        val foundItems = service.searchItems(
+            SearchItemsFilter(
+                sort = ItemListSort(
+                    field = ItemListSortField.TOTAL_VALUE,
+                    direction = SortDirection.DESCENDING,
+                ),
+            ),
+        )
+
+        assertEquals(listOf("Laptop", "Monitor", "Kabel"), foundItems.map { it.name.value })
+    }
+
+    @Test
     fun `creates item when category exists and normalized name is unique`() {
         val category = existingCategory()
         every { itemRepository.findByNormalizedName("laptop") } returns null
@@ -431,4 +453,19 @@ class ItemServiceTest {
 
     private fun existingSource(): Source =
         Source.create(SourceId.newId(), SourceName.of("Amazon"))
+
+    private fun itemListEntry(
+        name: String,
+        categoryId: CategoryId,
+        totalValue: MonetaryValue?,
+    ): ItemListEntry =
+        ItemListEntry(
+            id = ItemId.newId(),
+            name = ItemName.of(name),
+            categoryId = categoryId,
+            categoryName = CategoryName.of("Computer & Peripherie"),
+            totalQuantity = Quantity.ZERO,
+            averageValue = totalValue,
+            totalValue = totalValue,
+        )
 }

@@ -22,6 +22,7 @@ Die fachlichen Anforderungen stehen in `docs/requirements.md` und sind bei Umset
 - Datenbank in der Entwicklungsphase: H2
 - Spätere Datenbank auf der Synology-NAS: MariaDB
 - Datenbankmigrationen: Liquibase mit YAML-Changelogs
+- Neue Datenbankänderungen werden in neuen Liquibase-Changelog-Dateien abgelegt und über das Master-Changelog eingebunden; bestehende ausgeführte Changesets werden nicht nachträglich verändert
 - Datenbankunabhängigkeit ist wichtig; H2-spezifische Funktionen und datenbankspezifisches SQL nach Möglichkeit vermeiden
 
 ## Lokaler Betrieb

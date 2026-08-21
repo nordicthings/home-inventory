@@ -3,6 +3,9 @@
 <body>
 <form class="filters" method="get" th:action="@{/items}" hx-get="/items/table" hx-target="#item-table" hx-push-url="true"
       th:fragment="itemFilters">
+    <input type="hidden" name="sort" th:value="${page.sort.field}">
+    <input type="hidden" name="direction" th:value="${page.sort.direction}">
+
     <div class="field field--search">
         <label for="name">Suche</label>
         <input id="name" name="name" type="search" autocomplete="off" th:value="${page.filter.name}">

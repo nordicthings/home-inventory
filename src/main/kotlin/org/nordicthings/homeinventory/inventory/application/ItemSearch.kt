@@ -14,6 +14,7 @@ data class SearchItemsFilter(
     val categoryId: CategoryId? = null,
     val locationId: LocationId? = null,
     val sourceId: SourceId? = null,
+    val sort: ItemListSort = ItemListSort(),
 )
 
 data class ItemSearchCriteria(
@@ -32,3 +33,21 @@ data class ItemListEntry(
     val averageValue: MonetaryValue?,
     val totalValue: MonetaryValue?,
 )
+
+data class ItemListSort(
+    val field: ItemListSortField = ItemListSortField.NAME,
+    val direction: SortDirection = SortDirection.ASCENDING,
+)
+
+enum class ItemListSortField {
+    NAME,
+    CATEGORY,
+    TOTAL_QUANTITY,
+    AVERAGE_VALUE,
+    TOTAL_VALUE,
+}
+
+enum class SortDirection {
+    ASCENDING,
+    DESCENDING,
+}
