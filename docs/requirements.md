@@ -33,6 +33,14 @@ Für Version 2 geplant:
 - An einen Zugang soll eine PDF-Rechnung angehängt werden können.
 - Beim Anhängen einer Rechnung soll der Benutzer über einen Dateiauswahldialog eine PDF-Datei auswählen und in die Anwendung hochladen können.
 - Hochgeladene Rechnungen sollen zunächst in der Anwendung zum Download angeboten werden.
+- Pro Zugang reicht genau eine PDF-Rechnung aus.
+- Existiert an einem Zugang bereits eine Rechnung, soll beim erneuten Hochladen eine Warnung mit dem Dateinamen der vorhandenen Rechnung angezeigt werden. Der Benutzer kann den Upload abbrechen oder die vorhandene Rechnung durch die neue Datei ersetzen.
+- Eine Rechnung an einem Zugang kann nach Einblenden einer Sicherheitsabfrage gelöscht werden.
+- Es werden nur PDF-Dateien erlaubt.
+- Die maximale Uploadgröße soll konfigurierbar sein. Der initiale Standardwert beträgt 10 MB.
+- Rechnungsdateien werden im Dateisystem gespeichert. In der Datenbank werden nur die fachlich und technisch notwendigen Referenzen gespeichert, insbesondere der ursprüngliche Dateiname.
+- Der Ablagepfad soll konfigurierbar sein. Lokal wird standardmäßig `.local/files` verwendet. Für Docker- bzw. NAS-Betrieb ist ein persistentes Volume vorgesehen, z. B. `/data/home-inventory/files`.
+- Die Rechnungsaktionen sollen platzsparend direkt im Bereich des jeweiligen Zugangs dargestellt werden. Bei vorhandener Rechnung wird der Dateiname angezeigt; Download, Ersetzen und Löschen werden als kompakte Icon-Aktionen angeboten.
 - In einem späteren Schritt innerhalb von Version 2 soll eine Vorschau der PDF-Rechnung direkt in der Anwendung möglich sein.
 - Über den Datenbestand soll ein Report erstellt werden können.
 - Der Report soll die aktuell gefilterten Gegenstände berücksichtigen.
@@ -356,6 +364,34 @@ Bestehende Zugänge können gelöscht werden. Das ist auch erlaubt, wenn aktuell
 Das Löschen eines Zugangs muss vom Benutzer bestätigt werden.
 
 Wenn durch das Löschen eines Zugangs keine Zugänge mehr existieren, aber noch Ortsbestände vorhanden sind, erfolgt kein Hinweis.
+
+### Rechnung zu Zugang verwalten
+
+An einen Zugang kann genau eine PDF-Rechnung angehängt werden.
+
+Beim Hochladen einer Rechnung wählt der Benutzer über einen Dateiauswahldialog eine lokale PDF-Datei aus.
+
+Es werden nur PDF-Dateien akzeptiert. Die Prüfung erfolgt zunächst über Dateiendung und Content-Type.
+
+Die maximale Dateigröße für Uploads ist konfigurierbar. Der initiale Standardwert beträgt 10 MB.
+
+Rechnungsdateien werden im Dateisystem abgelegt. Der Ablagepfad ist konfigurierbar. Lokal wird standardmäßig `.local/files` verwendet. Im Docker- bzw. NAS-Betrieb wird ein persistentes Volume verwendet, z. B. `/data/home-inventory/files`.
+
+In der Datenbank wird eine eigene Referenz auf die Rechnungsdatei gespeichert. Die Referenz enthält mindestens den Zugang, den ursprünglichen Dateinamen und den intern verwendeten gespeicherten Dateinamen.
+
+Der intern gespeicherte Dateiname darf nicht vom ursprünglichen Dateinamen abhängen, damit Kollisionen und problematische Dateinamen vermieden werden.
+
+Wenn an einem Zugang bereits eine Rechnung existiert, wird vor dem Ersetzen eine Warnung mit dem Dateinamen der vorhandenen Rechnung angezeigt. Der Benutzer kann den Upload abbrechen oder die vorhandene Rechnung ersetzen.
+
+Eine vorhandene Rechnung kann heruntergeladen werden. Der Download verwendet den ursprünglichen Dateinamen.
+
+Der Download wird zunächst als Attachment ausgeliefert, so dass der Browser die Datei als Download behandelt.
+
+Eine vorhandene Rechnung kann gelöscht werden. Vor dem Löschen wird eine Sicherheitsabfrage angezeigt.
+
+Die Rechnungsaktionen werden platzsparend direkt im Bereich des jeweiligen Zugangs dargestellt. Bei vorhandener Rechnung wird der Dateiname angezeigt; Download, Ersetzen und Löschen werden als kompakte Icon-Aktionen angeboten.
+
+Eine Vorschau der PDF-Rechnung direkt in der Anwendung wird in einem späteren Schritt innerhalb von Version 2 umgesetzt.
 
 ### Stammdaten pflegen
 
