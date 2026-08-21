@@ -11,6 +11,7 @@
     --danger: #b42318;
     --danger-hover: #8c1d18;
     --focus: #8b5cf6;
+    --inventory-sticky-offset: 220px;
 }
 
 * {
@@ -36,6 +37,9 @@ a {
 }
 
 .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
     background: var(--surface);
     border-bottom: 1px solid var(--line);
 }
@@ -87,6 +91,15 @@ a {
     justify-content: space-between;
     gap: 16px;
     margin-bottom: 24px;
+}
+
+.page--inventory .page__header {
+    position: sticky;
+    top: var(--inventory-topbar-height, 56px);
+    z-index: 20;
+    margin-bottom: 0;
+    padding: 20px 0 16px;
+    background: var(--background);
 }
 
 .page__actions {
@@ -158,6 +171,15 @@ h2 {
 
 .toolbar {
     margin-bottom: 20px;
+}
+
+.page--inventory .toolbar {
+    position: sticky;
+    top: calc(var(--inventory-topbar-height, 56px) + var(--inventory-header-height, 76px));
+    z-index: 19;
+    margin-bottom: 0;
+    padding-bottom: 16px;
+    background: var(--background);
 }
 
 .filters {
@@ -429,11 +451,20 @@ h2 {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 8px;
-    overflow: hidden;
+}
+
+.page--inventory .table-section {
+    max-height: calc(100vh - var(--inventory-sticky-offset) - 24px);
+    overflow: auto;
 }
 
 .table-wrap {
+    border-radius: 8px;
     overflow-x: auto;
+}
+
+.page--inventory .table-wrap {
+    overflow: visible;
 }
 
 .data-table {
@@ -460,6 +491,12 @@ h2 {
     font-size: 0.82rem;
     font-weight: 700;
     text-transform: uppercase;
+}
+
+.table-section .data-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .sort-link {

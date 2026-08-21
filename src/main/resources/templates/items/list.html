@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Inventar - Nordic Things</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script defer th:src="@{/js/inventory-list-sticky.js}"></script>
 </head>
 <body>
 <header class="topbar">
@@ -19,7 +20,7 @@
     </div>
 </header>
 
-<main class="page">
+<main class="page page--inventory">
     <div class="page__header">
         <h1>Inventar</h1>
         <a class="button button--primary" href="/items/new">Gegenstand hinzufügen</a>
