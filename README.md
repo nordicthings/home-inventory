@@ -43,7 +43,7 @@ Mit `down -v` werden zusätzlich die lokalen Datenbank-Volumes gelöscht.
 
 ## Docker-Image der Anwendung
 
-Das Image wird lokal aus dem bereits gebauten Spring-Boot-JAR erzeugt. Der Container startet standardmäßig mit dem Spring-Profil `mariadb`.
+Das Script baut zuerst das Spring-Boot-JAR und erzeugt daraus lokal das Docker-Image. Der Container startet standardmäßig mit dem Spring-Profil `mariadb`.
 
 ### Image bauen:
 
@@ -51,10 +51,16 @@ Das Image wird lokal aus dem bereits gebauten Spring-Boot-JAR erzeugt. Der Conta
 ./scripts/build-image.sh
 ```
 
-Optional mit explizitem Namen und/oder Tag und/oder Plattform (das Image wird zusätzlich IMMER mit `latest`getaggt):
+Mit expliziter Versionsnummer:
 
 ```bash
-IMAGE_NAME=home-inventory IMAGE_TAG=0.1.0 PLATFORM=linux/amd64 ./scripts/build-image.sh
+./scripts/build-image.sh 1.1.0
+```
+
+Optional mit explizitem Namen und/oder Plattform (das Image wird zusätzlich IMMER mit `latest` getaggt):
+
+```bash
+IMAGE_NAME=home-inventory PLATFORM=linux/amd64 ./scripts/build-image.sh 1.1.0
 ```
 
 - linux/amd64 ist für Intel-/AMD-Prozessoren
@@ -62,7 +68,7 @@ IMAGE_NAME=home-inventory IMAGE_TAG=0.1.0 PLATFORM=linux/amd64 ./scripts/build-i
 
 Defaults sind:
 - IMAGE_NAME=home-inventory
-- IMAGE_TAG=0.1.0
+- IMAGE_TAG=0.1.0, sofern keine Versionsnummer übergeben wird
 - PLATFORM=linux/amd64
 
 Das Image wird dann in der lokalen Docker-Registry gespeichert.
@@ -70,8 +76,11 @@ Das Image wird dann in der lokalen Docker-Registry gespeichert.
 Um es auf das NAS zu bringen, muss es aus der lokalen Registry exportiert werden:
 
 ```bash
-docker save home-inventory:0.1.0 -o home-inventory-0.1.0.tar
+./scripts/build-image.sh 1.1.0 --export
 ```
+
+Das erzeugt zusätzlich die Datei `home-inventory-1.1.0.tar`. Mit `--export-dir <zielordner>` kann ein anderer Zielordner gewählt werden.
+
 Das Image kann nun auf dem NAS geladen werden.
 
 ### Container lokal starten:
@@ -87,13 +96,13 @@ docker run --rm \
   -e DB_NAME=home_inventory \
   -e DB_USERNAME=$DB_USERNAME \
   -e DB_PASSWORD=$DB_PASSWORD \
-  home-inventory:0.1.0
+  home-inventory:1.1.0
 ```
 
 Alternativ per Docker Compose, wenn die Datenbank bereits auf dem NAS läuft:
 
 ```bash
-APP_IMAGE=home-inventory:0.1.0 \
+APP_IMAGE=home-inventory:1.1.0 \
 DB_HOST=<nas-hostname-oder-ip> \
 DB_PORT=3306 \
 DB_NAME=home_inventory \
