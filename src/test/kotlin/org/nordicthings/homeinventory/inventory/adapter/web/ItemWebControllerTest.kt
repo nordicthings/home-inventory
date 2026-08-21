@@ -95,6 +95,23 @@ class ItemWebControllerTest {
     }
 
     @Test
+    fun `restores item list filters and sorting from session`() {
+        val filteredResponse = get("/items?name=Session-Laptop&sort=category&direction=desc")
+        val sessionCookie = filteredResponse.headers()
+            .allValues("Set-Cookie")
+            .first()
+            .substringBefore(";")
+
+        val restoredResponse = get("/items", mapOf("Cookie" to sessionCookie))
+
+        assertEquals(200, restoredResponse.statusCode())
+        assertContains(restoredResponse.body(), """<input id="name" name="name" type="search" autocomplete="off" value="Session-Laptop">""")
+        assertContains(restoredResponse.body(), """<input type="hidden" name="sort" value="category">""")
+        assertContains(restoredResponse.body(), """<input type="hidden" name="direction" value="desc">""")
+        assertContains(restoredResponse.body(), "absteigend")
+    }
+
+    @Test
     fun `renders item create form`() {
         val response = get("/items/new")
 
@@ -1368,14 +1385,16 @@ class ItemWebControllerTest {
         assertEquals(404, response.statusCode())
     }
 
-    private fun get(path: String): HttpResponse<String> =
-        client.send(
-            HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:$port$path"))
-                .GET()
-                .build(),
+    private fun get(path: String, headers: Map<String, String> = emptyMap()): HttpResponse<String> {
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:$port$path"))
+            .GET()
+        headers.forEach { (name, value) -> request.header(name, value) }
+        return client.send(
+            request.build(),
             HttpResponse.BodyHandlers.ofString(),
         )
+    }
 
     private fun post(path: String, form: Map<String, String>): HttpResponse<String> =
         client.send(

@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.server.ResponseStatusException
+import jakarta.servlet.http.HttpServletRequest
+import java.io.Serializable
 import java.time.LocalDate
 import java.util.UUID
 
@@ -51,9 +53,11 @@ class ItemWebController(
         @RequestParam(name = "sourceId", required = false) sourceId: String?,
         @RequestParam(name = "sort", required = false) sort: String?,
         @RequestParam(name = "direction", required = false) direction: String?,
+        request: HttpServletRequest,
         model: Model,
     ): String {
-        val page = createPageView(name, categoryId, locationId, sourceId, sort, direction)
+        val listState = resolveItemListState(name, categoryId, locationId, sourceId, sort, direction, request)
+        val page = createPageView(listState)
         model.addAttribute("page", page)
         model.addAttribute("items", page.items)
         model.addAttribute("sort", page.sort)
@@ -68,9 +72,11 @@ class ItemWebController(
         @RequestParam(name = "sourceId", required = false) sourceId: String?,
         @RequestParam(name = "sort", required = false) sort: String?,
         @RequestParam(name = "direction", required = false) direction: String?,
+        request: HttpServletRequest,
         model: Model,
     ): String {
-        val page = createPageView(name, categoryId, locationId, sourceId, sort, direction)
+        val listState = resolveItemListState(name, categoryId, locationId, sourceId, sort, direction, request)
+        val page = createPageView(listState)
         model.addAttribute("page", page)
         model.addAttribute("items", page.items)
         model.addAttribute("sort", page.sort)
@@ -486,23 +492,18 @@ class ItemWebController(
         }
 
     private fun createPageView(
-        name: String?,
-        categoryId: String?,
-        locationId: String?,
-        sourceId: String?,
-        sort: String?,
-        direction: String?,
+        state: ItemListSessionState,
     ): ItemListPageView =
         ItemListPageView(
             filter = ItemFilterView(
-                name = name.orEmpty(),
-                categoryId = categoryId.orEmpty(),
-                locationId = locationId.orEmpty(),
-                sourceId = sourceId.orEmpty(),
+                name = state.name,
+                categoryId = state.categoryId,
+                locationId = state.locationId,
+                sourceId = state.sourceId,
             ),
             sort = ItemSortView(
-                field = sort.toItemSortField().requestValue,
-                direction = direction.toSortDirection().requestValue,
+                field = state.sort.toItemSortField().requestValue,
+                direction = state.direction.toSortDirection().requestValue,
             ),
             categories = getCategoryListUseCase.getCategoryList()
                 .map { SelectOptionView(it.id.value.toString(), it.name.value) },
@@ -510,7 +511,7 @@ class ItemWebController(
                 .map { SelectOptionView(it.id.value.toString(), it.name.value) },
             sources = getSourceListUseCase.getSourceList()
                 .map { SelectOptionView(it.id.value.toString(), it.name.value) },
-            items = searchItems(name, categoryId, locationId, sourceId, sort, direction).map { it.toRowView() },
+            items = searchItems(state).map { it.toRowView() },
         )
 
     private fun categoryOptions(): List<SelectOptionView> =
@@ -806,28 +807,49 @@ class ItemWebController(
         }
 
     private fun searchItems(
-        name: String?,
-        categoryId: String?,
-        locationId: String?,
-        sourceId: String?,
-        sort: String?,
-        direction: String?,
+        state: ItemListSessionState,
     ) =
         searchItemsUseCase.searchItems(
             SearchItemsFilter(
-                name = name,
-                categoryId = categoryId.toCategoryIdOrNull(),
-                locationId = locationId.toLocationIdOrNull(),
-                sourceId = sourceId.toSourceIdOrNull(),
+                name = state.name,
+                categoryId = state.categoryId.toCategoryIdOrNull(),
+                locationId = state.locationId.toLocationIdOrNull(),
+                sourceId = state.sourceId.toSourceIdOrNull(),
                 sort = ItemListSort(
-                    field = sort.toItemSortField(),
-                    direction = direction.toSortDirection(),
+                    field = state.sort.toItemSortField(),
+                    direction = state.direction.toSortDirection(),
                 ),
             ),
         )
 
     private fun parseEstimatedValue(value: String) =
         parseMoneyValue(value)
+
+    private fun resolveItemListState(
+        name: String?,
+        categoryId: String?,
+        locationId: String?,
+        sourceId: String?,
+        sort: String?,
+        direction: String?,
+        request: HttpServletRequest,
+    ): ItemListSessionState {
+        if (request.parameterMap.isEmpty()) {
+            return request.getSession(false)?.getAttribute(ITEM_LIST_SESSION_STATE) as? ItemListSessionState
+                ?: ItemListSessionState()
+        }
+
+        val state = ItemListSessionState(
+            name = name.orEmpty(),
+            categoryId = categoryId.orEmpty(),
+            locationId = locationId.orEmpty(),
+            sourceId = sourceId.orEmpty(),
+            sort = sort.toItemSortField().requestValue,
+            direction = direction.toSortDirection().requestValue,
+        )
+        request.session.setAttribute(ITEM_LIST_SESSION_STATE, state)
+        return state
+    }
 
     private fun String?.toItemSortField(): ItemListSortField =
         when (this) {
@@ -892,3 +914,14 @@ class ItemWebController(
     }
 
 }
+
+private const val ITEM_LIST_SESSION_STATE = "inventory.itemListState"
+
+private data class ItemListSessionState(
+    val name: String = "",
+    val categoryId: String = "",
+    val locationId: String = "",
+    val sourceId: String = "",
+    val sort: String = "name",
+    val direction: String = "asc",
+) : Serializable
