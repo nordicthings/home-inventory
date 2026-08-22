@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rechnung hochladen - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="alternate icon" th:href="@{/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+            <a class="nav__link" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link" th:href="@{/locations}">Orte</a>
+            <a class="nav__link" th:href="@{/sources}">Bezugsquellen</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page page--narrow">
+    <div class="page__header">
+        <div>
+            <p class="eyebrow" th:text="${page.itemName}">Laptop</p>
+            <h1 th:text="${page.existingFilename == null ? 'Rechnung hochladen' : 'Rechnung ersetzen'}">Rechnung hochladen</h1>
+        </div>
+        <a class="button button--secondary" th:href="@{/items/{id}(id=${page.itemId})}">Zurück zum Gegenstand</a>
+    </div>
+
+    <form class="form"
+          method="post"
+          enctype="multipart/form-data"
+          th:action="@{/items/{id}/acquisitions/{acquisitionId}/invoice(id=${page.itemId},acquisitionId=${page.acquisitionId})}">
+        <div class="form__errors" th:if="${!#lists.isEmpty(page.globalErrors)}">
+            <p th:each="error : ${page.globalErrors}" th:text="${error.message}">Die Eingaben sind ungültig.</p>
+        </div>
+
+        <div class="notice-list" th:if="${page.existingFilename != null}">
+            <p>
+                <span>Aktuell ist die Rechnung </span>
+                <strong th:text="${page.existingFilename}">rechnung.pdf</strong>
+                <span> hinterlegt. Beim Speichern wird sie durch die neue Datei ersetzt.</span>
+            </p>
+        </div>
+
+        <input type="hidden" name="replaceExisting" th:value="${page.existingFilename != null}">
+
+        <div class="field">
+            <label for="file">PDF-Rechnung</label>
+            <input id="file"
+                   name="file"
+                   type="file"
+                   accept="application/pdf,.pdf"
+                   autofocus
+                   th:classappend="${page.errorFor('file') != null} ? 'input--error'">
+            <p class="field-error" th:if="${page.errorFor('file') != null}" th:text="${page.errorFor('file')}">Datei ist ungültig.</p>
+        </div>
+
+        <div class="form__actions">
+            <button class="button button--primary" type="submit" th:text="${page.existingFilename == null ? 'Rechnung hochladen' : 'Rechnung ersetzen'}">Rechnung hochladen</button>
+            <a class="button button--secondary" th:href="@{/items/{id}(id=${page.itemId})}">Abbrechen</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

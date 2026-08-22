@@ -20,10 +20,13 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.net.URLEncoder
+import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.util.UUID
+import kotlin.random.Random
 import kotlin.test.assertContains
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -34,6 +37,7 @@ import kotlin.test.assertNotNull
 @TestPropertySource(
     properties = [
         "spring.datasource.url=jdbc:h2:mem:home_inventory_web;MODE=MariaDB;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+        "home-inventory.files.storage-path=.local/test-files-web",
     ],
 )
 class ItemWebControllerTest {
@@ -931,6 +935,95 @@ class ItemWebControllerTest {
     }
 
     @Test
+    fun `uploads downloads replaces and deletes acquisition invoice`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Invoice-Laptop-${Random.nextInt()}"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(1), MonetaryValue.of("800"), null)
+        val acquisitionId = assertNotNull(itemRepository.findById(item.id)).sources.single().id
+
+        val uploadForm = get("/items/${item.id.value}/acquisitions/${acquisitionId.value}/invoice/upload")
+        assertEquals(200, uploadForm.statusCode())
+        assertContains(uploadForm.body(), "<h1>Rechnung hochladen</h1>")
+        assertContains(uploadForm.body(), """type="file"""")
+
+        val uploadResponse = postMultipart(
+            path = "/items/${item.id.value}/acquisitions/${acquisitionId.value}/invoice",
+            filename = "rechnung.pdf",
+            contentType = "application/pdf",
+            content = "%PDF-1.7 test".toByteArray(),
+        )
+        assertEquals(302, uploadResponse.statusCode())
+        assertEquals("notice=invoiceUploaded", URI.create(uploadResponse.headers().firstValue("location").orElseThrow()).query)
+
+        val detailResponse = get("/items/${item.id.value}")
+        assertEquals(200, detailResponse.statusCode())
+        assertContains(detailResponse.body(), "rechnung.pdf")
+        assertContains(detailResponse.body(), """invoice/download"""")
+        assertContains(detailResponse.body(), """invoice/delete"""")
+
+        val downloadResponse = getBytes("/items/${item.id.value}/acquisitions/${acquisitionId.value}/invoice/download")
+        assertEquals(200, downloadResponse.statusCode())
+        assertEquals("application/pdf", downloadResponse.headers().firstValue("content-type").orElseThrow())
+        assertContains(downloadResponse.headers().firstValue("content-disposition").orElseThrow(), "rechnung.pdf")
+        assertContentEquals("%PDF-1.7 test".toByteArray(), downloadResponse.body())
+
+        val replaceForm = get("/items/${item.id.value}/acquisitions/${acquisitionId.value}/invoice/upload")
+        assertEquals(200, replaceForm.statusCode())
+        assertContains(replaceForm.body(), "<h1>Rechnung ersetzen</h1>")
+        assertContains(replaceForm.body(), "Aktuell ist die Rechnung")
+        assertContains(replaceForm.body(), "rechnung.pdf")
+
+        val replaceResponse = postMultipart(
+            path = "/items/${item.id.value}/acquisitions/${acquisitionId.value}/invoice",
+            filename = "rechnung-neu.pdf",
+            contentType = "application/pdf",
+            content = "%PDF-1.7 replacement".toByteArray(),
+            fields = mapOf("replaceExisting" to "true"),
+        )
+        assertEquals(302, replaceResponse.statusCode())
+        assertEquals("notice=invoiceReplaced", URI.create(replaceResponse.headers().firstValue("location").orElseThrow()).query)
+
+        val deleteForm = get("/items/${item.id.value}/acquisitions/${acquisitionId.value}/invoice/delete")
+        assertEquals(200, deleteForm.statusCode())
+        assertContains(deleteForm.body(), "<h1>Rechnung löschen</h1>")
+        assertContains(deleteForm.body(), "rechnung-neu.pdf")
+
+        val deleteResponse = post("/items/${item.id.value}/acquisitions/${acquisitionId.value}/invoice/delete", emptyMap())
+        assertEquals(302, deleteResponse.statusCode())
+        assertEquals("notice=invoiceDeleted", URI.create(deleteResponse.headers().firstValue("location").orElseThrow()).query)
+    }
+
+    @Test
+    fun `rejects non pdf acquisition invoice upload`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val item = itemUseCase.createItem(
+            name = ItemName.of("Invalid-Invoice-Laptop-${Random.nextInt()}"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("800"),
+            note = "",
+        )
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(1), MonetaryValue.of("800"), null)
+        val acquisitionId = assertNotNull(itemRepository.findById(item.id)).sources.single().id
+
+        val response = postMultipart(
+            path = "/items/${item.id.value}/acquisitions/${acquisitionId.value}/invoice",
+            filename = "rechnung.txt",
+            contentType = "text/plain",
+            content = "keine pdf".toByteArray(),
+        )
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "Bitte eine PDF-Datei bis maximal 10 MB auswählen.")
+    }
+
+    @Test
     fun `records item acquisition with unknown purchase price and date when left blank`() {
         val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
         val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
@@ -1396,6 +1489,15 @@ class ItemWebControllerTest {
         )
     }
 
+    private fun getBytes(path: String): HttpResponse<ByteArray> =
+        client.send(
+            HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:$port$path"))
+                .GET()
+                .build(),
+            HttpResponse.BodyHandlers.ofByteArray(),
+        )
+
     private fun post(path: String, form: Map<String, String>): HttpResponse<String> =
         client.send(
             HttpRequest.newBuilder()
@@ -1405,6 +1507,40 @@ class ItemWebControllerTest {
                 .build(),
             HttpResponse.BodyHandlers.ofString(),
         )
+
+    private fun postMultipart(
+        path: String,
+        filename: String,
+        contentType: String,
+        content: ByteArray,
+        fields: Map<String, String> = emptyMap(),
+    ): HttpResponse<String> {
+        val boundary = "----home-inventory-${UUID.randomUUID()}"
+        val body = ByteArrayOutputStream()
+        fields.forEach { (name, value) ->
+            body.writeString("--$boundary\r\n")
+            body.writeString("Content-Disposition: form-data; name=\"$name\"\r\n\r\n")
+            body.writeString("$value\r\n")
+        }
+        body.writeString("--$boundary\r\n")
+        body.writeString("Content-Disposition: form-data; name=\"file\"; filename=\"$filename\"\r\n")
+        body.writeString("Content-Type: $contentType\r\n\r\n")
+        body.write(content)
+        body.writeString("\r\n--$boundary--\r\n")
+
+        return client.send(
+            HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:$port$path"))
+                .header("Content-Type", "multipart/form-data; boundary=$boundary")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(),
+        )
+    }
+
+    private fun ByteArrayOutputStream.writeString(value: String) {
+        write(value.toByteArray(StandardCharsets.UTF_8))
+    }
 
     private fun Map<String, String>.toFormBody(): String =
         entries.joinToString("&") { (key, value) ->

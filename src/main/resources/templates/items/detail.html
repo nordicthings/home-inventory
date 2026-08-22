@@ -123,6 +123,7 @@
                     <th class="number" scope="col">Menge</th>
                     <th class="number" scope="col">Kaufpreis</th>
                     <th scope="col">Kaufdatum</th>
+                    <th scope="col">Rechnung</th>
                     <th scope="col">Aktionen</th>
                 </tr>
                 </thead>
@@ -133,6 +134,31 @@
                     <td class="number" th:text="${acquisition.purchasePrice}">800,00 EUR</td>
                     <td th:text="${acquisition.purchaseDate}">03.01.2026</td>
                     <td>
+                        <div class="invoice-cell">
+                            <span class="invoice-cell__filename"
+                                  th:if="${acquisition.invoiceFilename != null}"
+                                  th:text="${acquisition.invoiceFilename}">rechnung.pdf</span>
+                            <span class="muted-text" th:if="${acquisition.invoiceFilename == null}">Keine Rechnung</span>
+                            <div class="row-actions row-actions--compact">
+                                <a class="table-link"
+                                   th:if="${acquisition.invoiceFilename != null}"
+                                   th:href="@{/items/{id}/acquisitions/{acquisitionId}/invoice/download(id=${page.id},acquisitionId=${acquisition.id})}"
+                                   title="Rechnung herunterladen"
+                                   aria-label="Rechnung herunterladen">Download</a>
+                                <a class="table-link"
+                                   th:href="@{/items/{id}/acquisitions/{acquisitionId}/invoice/upload(id=${page.id},acquisitionId=${acquisition.id})}"
+                                   th:title="${acquisition.invoiceFilename == null ? 'Rechnung hochladen' : 'Rechnung ersetzen'}"
+                                   th:aria-label="${acquisition.invoiceFilename == null ? 'Rechnung hochladen' : 'Rechnung ersetzen'}"
+                                   th:text="${acquisition.invoiceFilename == null ? 'Upload' : 'Ersetzen'}">Upload</a>
+                                <a class="table-link table-link--danger"
+                                   th:if="${acquisition.invoiceFilename != null}"
+                                   th:href="@{/items/{id}/acquisitions/{acquisitionId}/invoice/delete(id=${page.id},acquisitionId=${acquisition.id})}"
+                                   title="Rechnung löschen"
+                                   aria-label="Rechnung löschen">Löschen</a>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
                         <div class="row-actions">
                             <a class="table-link"
                                th:href="@{/items/{id}/acquisitions/{acquisitionId}/edit(id=${page.id},acquisitionId=${acquisition.id})}">Ändern</a>
@@ -142,7 +168,7 @@
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(page.acquisitions)}">
-                    <td class="empty" colspan="5">Keine Zugänge erfasst</td>
+                    <td class="empty" colspan="6">Keine Zugänge erfasst</td>
                 </tr>
                 </tbody>
             </table>

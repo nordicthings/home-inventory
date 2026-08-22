@@ -113,6 +113,8 @@ docker compose -f docker-compose.app.yml up -d
 
 Die Compose-Datei verwendet standardmäßig das feste Docker-Subnetz `172.30.10.0/24` und die feste Container-IP `172.30.10.10`. Der MariaDB-User kann dafür z. B. auf `'appuser'@'172.30.10.%'` oder enger auf `'appuser'@'172.30.10.10'` berechtigt werden.
 
+Für hochgeladene Rechnungsdateien bindet die Compose-Datei standardmäßig `.local/files` als persistentes Volume nach `/data/home-inventory/files` ein. Auf dem NAS sollte `FILE_STORAGE_PATH` auf einen dauerhaft gesicherten Ordner gesetzt werden. Die maximale Uploadgröße kann über `HOME_INVENTORY_FILES_MAX_UPLOAD_SIZE` angepasst werden; der Standardwert ist `10MB`.
+
 ## Anlegen einer DB auf dem Synology NAS
 Eine SSH-Session auf dem NAS starten. Bei Bedarf vorher den ssh-Dienst starten.
 

@@ -33,6 +33,7 @@ data class ItemAcquisitionView(
     val quantity: String,
     val purchasePrice: String,
     val purchaseDate: String,
+    val invoiceFilename: String?,
 )
 
 data class ItemAcquisitionDeleteView(
@@ -74,6 +75,7 @@ private fun ItemAcquisitionDetails.toAcquisitionView(): ItemAcquisitionView =
         quantity = quantity.value.formatIntegerForView(),
         purchasePrice = purchasePrice.formatForView(),
         purchaseDate = purchaseDate?.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) ?: "unbekannt",
+        invoiceFilename = invoice?.originalFilename?.value,
     )
 
 fun ItemAcquisitionDetails.toDeletePageView(): ItemAcquisitionDeleteView =

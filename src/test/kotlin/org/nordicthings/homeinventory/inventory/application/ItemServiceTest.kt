@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.nordicthings.homeinventory.inventory.application.port.outbound.CategoryRepository
+import org.nordicthings.homeinventory.inventory.application.port.outbound.AcquisitionInvoiceRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.ItemRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.LocationRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.SourceRepository
@@ -33,11 +34,13 @@ class ItemServiceTest {
     private val categoryRepository = mockk<CategoryRepository>()
     private val locationRepository = mockk<LocationRepository>()
     private val sourceRepository = mockk<SourceRepository>()
+    private val acquisitionInvoiceRepository = mockk<AcquisitionInvoiceRepository>()
     private val service = ItemService(
         itemRepository = itemRepository,
         categoryRepository = categoryRepository,
         locationRepository = locationRepository,
         sourceRepository = sourceRepository,
+        acquisitionInvoiceRepository = acquisitionInvoiceRepository,
     )
 
     @Test
@@ -64,6 +67,7 @@ class ItemServiceTest {
         every { locationRepository.findById(office.id) } returns office
         every { sourceRepository.findById(amazon.id) } returns amazon
         every { sourceRepository.findById(saturn.id) } returns saturn
+        every { acquisitionInvoiceRepository.findByAcquisitionId(any()) } returns null
 
         val details = service.getItemDetails(item.id)
 

@@ -59,6 +59,9 @@ class ItemJpaRepositoryAdapterTest {
     private lateinit var itemSourceJpaEntityRepository: ItemSourceJpaEntityRepository
 
     @Autowired
+    private lateinit var acquisitionInvoiceJpaEntityRepository: AcquisitionInvoiceJpaEntityRepository
+
+    @Autowired
     private lateinit var categoryJpaEntityRepository: CategoryJpaEntityRepository
 
     @Autowired
@@ -69,6 +72,7 @@ class ItemJpaRepositoryAdapterTest {
 
     @BeforeEach
     fun clearDatabase() {
+        acquisitionInvoiceJpaEntityRepository.deleteAll()
         itemSourceJpaEntityRepository.deleteAll()
         itemLocationQuantityJpaEntityRepository.deleteAll()
         itemJpaEntityRepository.deleteAll()
@@ -225,6 +229,31 @@ class ItemJpaRepositoryAdapterTest {
         assertFalse(foundItem.locationQuantities.containsKey(kitchen.id))
         assertEquals(Quantity.of(3), foundItem.locationQuantities[office.id])
         assertEquals(2, foundItem.sources.size)
+    }
+
+    @Test
+    fun `keeps invoice reference when saving item with unchanged acquisition`() {
+        val category = existingCategory()
+        val amazon = existingSource("Amazon")
+        val item = existingItem(category.id)
+        item.recordAcquisition(amazon.id, Quantity.of(1), MonetaryValue.of("800"), null)
+        itemRepository.save(item)
+        val acquisitionId = assertNotNull(itemRepository.findById(item.id)).sources.single().id
+        acquisitionInvoiceJpaEntityRepository.save(
+            AcquisitionInvoiceJpaEntity(
+                id = java.util.UUID.randomUUID(),
+                acquisitionId = acquisitionId.value,
+                originalFilename = "rechnung.pdf",
+                storedFilename = "stored.pdf",
+            ),
+        )
+
+        item.changeNote("Aktualisiert")
+        itemRepository.save(item)
+
+        val invoice = acquisitionInvoiceJpaEntityRepository.findByAcquisitionId(acquisitionId.value)
+        assertNotNull(invoice)
+        assertEquals("rechnung.pdf", invoice.originalFilename)
     }
 
     @Test

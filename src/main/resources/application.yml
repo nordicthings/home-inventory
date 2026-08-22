@@ -8,10 +8,19 @@ spring:
     password:
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yml
+  servlet:
+    multipart:
+      max-file-size: ${HOME_INVENTORY_FILES_MAX_UPLOAD_SIZE:10MB}
+      max-request-size: ${HOME_INVENTORY_FILES_MAX_UPLOAD_SIZE:10MB}
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+
+home-inventory:
+  files:
+    storage-path: ${HOME_INVENTORY_FILES_STORAGE_PATH:.local/files}
+    max-upload-size: ${HOME_INVENTORY_FILES_MAX_UPLOAD_SIZE:10MB}
 
 ---
 spring:

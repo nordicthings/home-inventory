@@ -42,4 +42,5 @@ data class ItemAcquisitionDetails(
     val quantity: Quantity,
     val purchasePrice: MonetaryValue,
     val purchaseDate: LocalDate?,
+    val invoice: AcquisitionInvoiceDetails? = null,
 )

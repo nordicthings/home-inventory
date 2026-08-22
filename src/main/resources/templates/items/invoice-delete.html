@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rechnung löschen - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="alternate icon" th:href="@{/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+            <a class="nav__link" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link" th:href="@{/locations}">Orte</a>
+            <a class="nav__link" th:href="@{/sources}">Bezugsquellen</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page page--narrow">
+    <div class="page__header">
+        <div>
+            <p class="eyebrow" th:text="${page.itemName}">Laptop</p>
+            <h1>Rechnung löschen</h1>
+        </div>
+        <a class="button button--secondary" th:href="@{/items/{id}(id=${page.itemId})}">Zurück zum Gegenstand</a>
+    </div>
+
+    <section class="confirm-box" aria-label="Rechnung löschen">
+        <p>Diese Rechnung wird dauerhaft gelöscht.</p>
+
+        <dl class="confirm-details">
+            <div>
+                <dt>Dateiname</dt>
+                <dd th:text="${page.filename}">rechnung.pdf</dd>
+            </div>
+        </dl>
+
+        <form class="form__actions"
+              method="post"
+              th:action="@{/items/{id}/acquisitions/{acquisitionId}/invoice/delete(id=${page.itemId},acquisitionId=${page.acquisitionId})}">
+            <button class="button button--danger" type="submit">Endgültig löschen</button>
+            <a class="button button--secondary" th:href="@{/items/{id}(id=${page.itemId})}">Abbrechen</a>
+        </form>
+    </section>
+</main>
+</body>
+</html>

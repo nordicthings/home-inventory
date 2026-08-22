@@ -10,8 +10,12 @@ services:
       DB_NAME: ${DB_NAME:-home_inventory}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+      HOME_INVENTORY_FILES_STORAGE_PATH: /data/home-inventory/files
+      HOME_INVENTORY_FILES_MAX_UPLOAD_SIZE: ${HOME_INVENTORY_FILES_MAX_UPLOAD_SIZE:-10MB}
     ports:
       - "${APP_PORT:-8080}:8080"
+    volumes:
+      - ${FILE_STORAGE_PATH:-.local/files}:/data/home-inventory/files
     networks:
       home-inventory-app:
         ipv4_address: ${APP_IPV4:-172.30.10.10}

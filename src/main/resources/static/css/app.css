@@ -557,6 +557,10 @@ h2 {
     gap: 12px;
 }
 
+.row-actions--compact {
+    gap: 8px;
+}
+
 .row-actions form {
     margin: 0;
 }
@@ -582,6 +586,24 @@ h2 {
 .empty {
     color: var(--muted);
     text-align: center;
+}
+
+.muted-text {
+    color: var(--muted);
+}
+
+.invoice-cell {
+    display: grid;
+    gap: 6px;
+    min-width: 160px;
+    max-width: 260px;
+}
+
+.invoice-cell__filename {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 @media (max-width: 920px) {

@@ -9,4 +9,6 @@ interface ItemSourceJpaEntityRepository : JpaRepository<ItemSourceJpaEntity, UUI
     fun existsBySourceId(sourceId: UUID): Boolean
 
     fun deleteByItemId(itemId: UUID)
+
+    fun deleteByItemIdAndIdNotIn(itemId: UUID, ids: Collection<UUID>)
 }

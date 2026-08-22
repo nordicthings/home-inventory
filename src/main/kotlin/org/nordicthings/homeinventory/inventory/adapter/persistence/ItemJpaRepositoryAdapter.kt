@@ -71,9 +71,14 @@ class ItemJpaRepositoryAdapter(
     override fun save(item: Item): Item {
         itemRepository.save(item.toJpaEntity())
         locationQuantityRepository.deleteByIdItemId(item.id.value)
-        sourceRepository.deleteByItemId(item.id.value)
         locationQuantityRepository.saveAll(item.toLocationQuantityJpaEntities())
-        sourceRepository.saveAll(item.toItemSourceJpaEntities())
+        val itemSourceEntities = item.toItemSourceJpaEntities()
+        if (itemSourceEntities.isEmpty()) {
+            sourceRepository.deleteByItemId(item.id.value)
+        } else {
+            sourceRepository.deleteByItemIdAndIdNotIn(item.id.value, itemSourceEntities.map { it.id })
+            sourceRepository.saveAll(itemSourceEntities)
+        }
         return item
     }
 

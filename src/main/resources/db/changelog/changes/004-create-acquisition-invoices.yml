@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-create-acquisition-invoices
+      author: codex
+      changes:
+        - createTable:
+            tableName: inventory_acquisition_invoice
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: acquisition_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: original_filename
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stored_filename
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: inventory_acquisition_invoice
+            columnNames: acquisition_id
+            constraintName: uk_inventory_acquisition_invoice_acquisition
+        - addUniqueConstraint:
+            tableName: inventory_acquisition_invoice
+            columnNames: stored_filename
+            constraintName: uk_inventory_acquisition_invoice_stored_filename
+        - addForeignKeyConstraint:
+            baseTableName: inventory_acquisition_invoice
+            baseColumnNames: acquisition_id
+            constraintName: fk_inventory_acquisition_invoice_acquisition
+            referencedTableName: inventory_item_source
+            referencedColumnNames: id
+            onDelete: CASCADE

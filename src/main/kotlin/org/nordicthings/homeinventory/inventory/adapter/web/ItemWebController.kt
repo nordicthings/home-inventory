@@ -1,11 +1,14 @@
 package org.nordicthings.homeinventory.inventory.adapter.web
 
+import org.nordicthings.homeinventory.inventory.application.AcquisitionInvoiceAlreadyExistsException
 import org.nordicthings.homeinventory.inventory.application.DuplicateNameException
 import org.nordicthings.homeinventory.inventory.application.EntityNotFoundException
+import org.nordicthings.homeinventory.inventory.application.InvalidAcquisitionInvoiceException
 import org.nordicthings.homeinventory.inventory.application.ItemListSort
 import org.nordicthings.homeinventory.inventory.application.ItemListSortField
 import org.nordicthings.homeinventory.inventory.application.SearchItemsFilter
 import org.nordicthings.homeinventory.inventory.application.SortDirection
+import org.nordicthings.homeinventory.inventory.application.port.inbound.AcquisitionInvoiceUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetCategoryListUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetItemDetailsUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetLocationListUseCase
@@ -21,7 +24,11 @@ import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import org.nordicthings.homeinventory.inventory.domain.Quantity
 import org.nordicthings.homeinventory.inventory.domain.SourceId
+import org.springframework.http.ContentDisposition
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
@@ -29,6 +36,7 @@ import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import jakarta.servlet.http.HttpServletRequest
 import java.io.Serializable
@@ -43,6 +51,7 @@ class ItemWebController(
     private val getCategoryListUseCase: GetCategoryListUseCase,
     private val getLocationListUseCase: GetLocationListUseCase,
     private val getSourceListUseCase: GetSourceListUseCase,
+    private val acquisitionInvoiceUseCase: AcquisitionInvoiceUseCase,
 ) {
 
     @GetMapping("/", "/items")
@@ -240,6 +249,114 @@ class ItemWebController(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
 
+    @GetMapping("/items/{id}/acquisitions/{acquisitionId}/invoice/upload")
+    fun uploadAcquisitionInvoiceForm(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+        model: Model,
+    ): String =
+        renderAcquisitionInvoiceUploadForm(id, acquisitionId, emptyList(), model)
+
+    @PostMapping("/items/{id}/acquisitions/{acquisitionId}/invoice")
+    fun uploadAcquisitionInvoice(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam(name = "replaceExisting", required = false, defaultValue = "false") replaceExisting: Boolean,
+        model: Model,
+    ): String {
+        if (file.isEmpty) {
+            return renderAcquisitionInvoiceUploadForm(
+                id,
+                acquisitionId,
+                listOf(FormErrorView("file", "Bitte eine PDF-Rechnung auswählen.")),
+                model,
+            )
+        }
+
+        return try {
+            acquisitionInvoiceUseCase.uploadInvoice(
+                itemId = ItemId(id),
+                acquisitionId = ItemSourceId(acquisitionId),
+                originalFilename = file.originalFilename.orEmpty(),
+                contentType = file.contentType,
+                content = file.bytes,
+                replaceExisting = replaceExisting,
+            )
+            "redirect:/items/$id?notice=${if (replaceExisting) "invoiceReplaced" else "invoiceUploaded"}"
+        } catch (exception: AcquisitionInvoiceAlreadyExistsException) {
+            renderAcquisitionInvoiceUploadForm(
+                id,
+                acquisitionId,
+                listOf(FormErrorView(null, "Es ist bereits die Rechnung ${exception.existingFilename} hinterlegt.")),
+                model,
+            )
+        } catch (exception: InvalidAcquisitionInvoiceException) {
+            renderAcquisitionInvoiceUploadForm(id, acquisitionId, listOf(FormErrorView("file", "Bitte eine PDF-Datei bis maximal 10 MB auswählen.")), model)
+        } catch (exception: EntityNotFoundException) {
+            throw invoiceNotFoundResponse(exception)
+        }
+    }
+
+    @GetMapping("/items/{id}/acquisitions/{acquisitionId}/invoice/download")
+    fun downloadAcquisitionInvoice(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+    ): ResponseEntity<ByteArray> =
+        try {
+            val invoice = acquisitionInvoiceUseCase.downloadInvoice(ItemId(id), ItemSourceId(acquisitionId))
+            ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(
+                    HttpHeaders.CONTENT_DISPOSITION,
+                    ContentDisposition.attachment()
+                        .filename(invoice.originalFilename.value, Charsets.UTF_8)
+                        .build()
+                        .toString(),
+                )
+                .body(invoice.content)
+        } catch (exception: EntityNotFoundException) {
+            throw invoiceNotFoundResponse(exception)
+        }
+
+    @GetMapping("/items/{id}/acquisitions/{acquisitionId}/invoice/delete")
+    fun confirmDeleteAcquisitionInvoice(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            val acquisition = details.acquisitions.firstOrNull { it.id.value == acquisitionId }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Zugang wurde nicht gefunden.")
+            val invoice = acquisition.invoice
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Rechnung wurde nicht gefunden.")
+            model.addAttribute(
+                "page",
+                AcquisitionInvoiceDeletePageView(
+                    itemId = details.id.value.toString(),
+                    acquisitionId = acquisition.id.value.toString(),
+                    itemName = details.name.value,
+                    filename = invoice.originalFilename.value,
+                ),
+            )
+            "items/invoice-delete"
+        } catch (exception: EntityNotFoundException) {
+            throw invoiceNotFoundResponse(exception)
+        }
+
+    @PostMapping("/items/{id}/acquisitions/{acquisitionId}/invoice/delete")
+    fun deleteAcquisitionInvoice(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+    ): String =
+        try {
+            acquisitionInvoiceUseCase.deleteInvoice(ItemId(id), ItemSourceId(acquisitionId))
+            "redirect:/items/$id?notice=invoiceDeleted"
+        } catch (exception: EntityNotFoundException) {
+            throw invoiceNotFoundResponse(exception)
+        }
+
     @PostMapping("/items")
     fun createItem(
         @ModelAttribute form: ItemCreateForm,
@@ -310,6 +427,7 @@ class ItemWebController(
     @PostMapping("/items/{id}/delete")
     fun deleteItem(@PathVariable id: UUID): String =
         try {
+            acquisitionInvoiceUseCase.deleteInvoicesForItem(ItemId(id))
             itemUseCase.deleteItem(ItemId(id))
             "redirect:/items"
         } catch (exception: EntityNotFoundException) {
@@ -457,13 +575,24 @@ class ItemWebController(
         }
 
         return try {
+            val detailsBeforeSave = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            val sourceId = SourceId(UUID.fromString(form.sourceId))
+            val quantity = Quantity.of(parseQuantity(form.quantity))
+            val purchasePrice = MonetaryValue.of(parseMoneyValue(form.purchasePrice))
+            val purchaseDate = parsePurchaseDate(form.purchaseDate)
+            val merged = detailsBeforeSave.acquisitions.any {
+                it.id.value != acquisitionId && it.sourceId == sourceId && it.purchasePrice == purchasePrice && it.purchaseDate == purchaseDate
+            }
+            if (merged) {
+                acquisitionInvoiceUseCase.deleteInvoice(ItemId(id), ItemSourceId(acquisitionId))
+            }
             itemUseCase.updateAcquisition(
                 id = ItemId(id),
                 itemSourceId = ItemSourceId(acquisitionId),
-                sourceId = SourceId(UUID.fromString(form.sourceId)),
-                quantity = Quantity.of(parseQuantity(form.quantity)),
-                purchasePrice = MonetaryValue.of(parseMoneyValue(form.purchasePrice)),
-                purchaseDate = parsePurchaseDate(form.purchaseDate),
+                sourceId = sourceId,
+                quantity = quantity,
+                purchasePrice = purchasePrice,
+                purchaseDate = purchaseDate,
             ).toItemDetailRedirect(id)
         } catch (exception: EntityNotFoundException) {
             if (exception.message?.startsWith("Item does not exist") == true) {
@@ -483,6 +612,7 @@ class ItemWebController(
         @PathVariable acquisitionId: UUID,
     ): String =
         try {
+            acquisitionInvoiceUseCase.deleteInvoice(ItemId(id), ItemSourceId(acquisitionId))
             itemUseCase.deleteAcquisition(ItemId(id), ItemSourceId(acquisitionId))
             "redirect:/items/$id"
         } catch (exception: EntityNotFoundException) {
@@ -566,6 +696,31 @@ class ItemWebController(
             }
             model.addAttribute("page", createAcquisitionPageView(id, acquisitionId, details.name.value, form, errors))
             "items/acquisition"
+        } catch (exception: EntityNotFoundException) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        }
+
+    private fun renderAcquisitionInvoiceUploadForm(
+        id: UUID,
+        acquisitionId: UUID,
+        errors: List<FormErrorView>,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            val acquisition = details.acquisitions.firstOrNull { it.id.value == acquisitionId }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Zugang wurde nicht gefunden.")
+            model.addAttribute(
+                "page",
+                AcquisitionInvoiceUploadPageView(
+                    itemId = details.id.value.toString(),
+                    acquisitionId = acquisition.id.value.toString(),
+                    itemName = details.name.value,
+                    existingFilename = acquisition.invoice?.originalFilename?.value,
+                    errors = errors,
+                ),
+            )
+            "items/invoice-upload"
         } catch (exception: EntityNotFoundException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
         }
@@ -891,6 +1046,9 @@ class ItemWebController(
         when (this) {
             "acquisitionMerged" -> "Zugang wurde mit einem bestehenden Zugang zusammengeführt."
             "acquisitionQuantityExceedsLocationQuantity" -> "Die Zugangsgesamtmenge ist größer als die aktuelle Ortsgesamtmenge."
+            "invoiceUploaded" -> "Rechnung wurde hochgeladen."
+            "invoiceReplaced" -> "Rechnung wurde ersetzt."
+            "invoiceDeleted" -> "Rechnung wurde gelöscht."
             else -> null
         }
 
@@ -913,6 +1071,14 @@ class ItemWebController(
         return acquisitionQuantity > totalQuantity.value
     }
 
+    private fun invoiceNotFoundResponse(exception: EntityNotFoundException): ResponseStatusException =
+        if (exception.message?.startsWith("Item does not exist") == true) {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Gegenstand wurde nicht gefunden.", exception)
+        } else if (exception.message?.startsWith("Acquisition does not exist") == true) {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Zugang wurde nicht gefunden.", exception)
+        } else {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Rechnung wurde nicht gefunden.", exception)
+        }
 }
 
 private const val ITEM_LIST_SESSION_STATE = "inventory.itemListState"

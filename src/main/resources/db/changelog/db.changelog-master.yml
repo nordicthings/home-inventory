@@ -447,3 +447,5 @@ databaseChangeLog:
               - column: { name: name, value: "Sonstige" }
               - column: { name: normalized_name, value: "sonstige" }
               - column: { name: details, value: "" }
+  - include:
+      file: db/changelog/changes/004-create-acquisition-invoices.yml

@@ -3,6 +3,7 @@ package org.nordicthings.homeinventory.inventory.application
 import org.nordicthings.homeinventory.inventory.application.port.inbound.GetItemDetailsUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.ItemUseCase
 import org.nordicthings.homeinventory.inventory.application.port.inbound.SearchItemsUseCase
+import org.nordicthings.homeinventory.inventory.application.port.outbound.AcquisitionInvoiceRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.CategoryRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.ItemRepository
 import org.nordicthings.homeinventory.inventory.application.port.outbound.LocationRepository
@@ -28,6 +29,7 @@ class ItemService(
     private val categoryRepository: CategoryRepository,
     private val locationRepository: LocationRepository,
     private val sourceRepository: SourceRepository,
+    private val acquisitionInvoiceRepository: AcquisitionInvoiceRepository,
 ) : ItemUseCase, SearchItemsUseCase, GetItemDetailsUseCase {
     override fun getItemDetails(id: ItemId): ItemDetails {
         val item = findItem(id)
@@ -245,6 +247,7 @@ class ItemService(
             quantity = source.quantity,
             purchasePrice = source.purchasePrice,
             purchaseDate = source.purchaseDate,
+            invoice = acquisitionInvoiceRepository.findByAcquisitionId(source.id)?.toDetails(),
         )
     }
 }
@@ -279,3 +282,10 @@ private fun compareKnownMoney(left: BigDecimal?, right: BigDecimal?, direction: 
         right == null -> -1
         else -> left.compareTo(right) * if (direction == SortDirection.ASCENDING) 1 else -1
     }
+
+private fun org.nordicthings.homeinventory.inventory.domain.AcquisitionInvoice.toDetails(): AcquisitionInvoiceDetails =
+    AcquisitionInvoiceDetails(
+        id = id,
+        acquisitionId = acquisitionId,
+        originalFilename = originalFilename,
+    )
