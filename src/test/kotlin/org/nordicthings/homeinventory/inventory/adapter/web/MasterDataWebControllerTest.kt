@@ -58,12 +58,16 @@ class MasterDataWebControllerTest {
         val listResponse = get("/categories")
         assertEquals(200, listResponse.statusCode())
         assertContains(listResponse.body(), "<h1>Kategorien</h1>")
+        assertContains(listResponse.body(), """class="page page--sticky-list"""")
+        assertContains(listResponse.body(), """src="/js/inventory-list-sticky.js"""")
         assertContains(listResponse.body(), "Kategorie hinzufügen")
         assertContains(listResponse.body(), "Computer &amp; Peripherie")
 
         val createForm = get("/categories/new")
         assertEquals(200, createForm.statusCode())
         assertContains(createForm.body(), "<h1>Kategorie hinzufügen</h1>")
+        assertContains(createForm.body(), """src="/js/escape-navigation.js"""")
+        assertContains(createForm.body(), """data-escape-href="/categories"""")
         assertContains(createForm.body(), "autofocus")
 
         val createResponse = post("/categories", mapOf("name" to "Testkategorie"))
@@ -114,6 +118,8 @@ class MasterDataWebControllerTest {
         val listResponse = get("/locations")
         assertEquals(200, listResponse.statusCode())
         assertContains(listResponse.body(), "<h1>Orte</h1>")
+        assertContains(listResponse.body(), """class="page page--sticky-list"""")
+        assertContains(listResponse.body(), """src="/js/inventory-list-sticky.js"""")
         assertContains(listResponse.body(), "Ort hinzufügen")
         assertContains(listResponse.body(), "Küche")
 
@@ -125,6 +131,8 @@ class MasterDataWebControllerTest {
         val editForm = get("/locations/${location.id.value}/edit")
         assertEquals(200, editForm.statusCode())
         assertContains(editForm.body(), "<h1>Ort bearbeiten</h1>")
+        assertContains(editForm.body(), """src="/js/escape-navigation.js"""")
+        assertContains(editForm.body(), """data-escape-href="/locations"""")
         assertContains(editForm.body(), "autofocus")
         assertContains(editForm.body(), """value="Garage"""")
         assertContains(editForm.body(), """selected="selected">extern</option>""")
@@ -169,6 +177,8 @@ class MasterDataWebControllerTest {
         val listResponse = get("/sources")
         assertEquals(200, listResponse.statusCode())
         assertContains(listResponse.body(), "<h1>Bezugsquellen</h1>")
+        assertContains(listResponse.body(), """class="page page--sticky-list"""")
+        assertContains(listResponse.body(), """src="/js/inventory-list-sticky.js"""")
         assertContains(listResponse.body(), "Bezugsquelle hinzufügen")
         assertContains(listResponse.body(), "Amazon")
 
@@ -180,6 +190,8 @@ class MasterDataWebControllerTest {
         val editForm = get("/sources/${source.id.value}/edit")
         assertEquals(200, editForm.statusCode())
         assertContains(editForm.body(), "<h1>Bezugsquelle bearbeiten</h1>")
+        assertContains(editForm.body(), """src="/js/escape-navigation.js"""")
+        assertContains(editForm.body(), """data-escape-href="/sources"""")
         assertContains(editForm.body(), """value="Flohmarkt"""")
         assertContains(editForm.body(), "Samstag")
 

@@ -1,6 +1,6 @@
 (function () {
     function updateInventoryStickyOffset() {
-        var page = document.querySelector(".page--inventory");
+        var page = document.querySelector(".page--inventory, .page--sticky-list");
         if (!page) {
             return;
         }
@@ -13,9 +13,9 @@
         var toolbarHeight = toolbar ? toolbar.offsetHeight : 0;
         var offset = topbarHeight + headerHeight + toolbarHeight;
 
-        document.documentElement.style.setProperty("--inventory-topbar-height", topbarHeight + "px");
-        document.documentElement.style.setProperty("--inventory-header-height", headerHeight + "px");
-        document.documentElement.style.setProperty("--inventory-sticky-offset", offset + "px");
+        document.documentElement.style.setProperty("--sticky-topbar-height", topbarHeight + "px");
+        document.documentElement.style.setProperty("--sticky-header-height", headerHeight + "px");
+        document.documentElement.style.setProperty("--sticky-content-offset", offset + "px");
     }
 
     window.addEventListener("load", updateInventoryStickyOffset);

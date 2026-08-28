@@ -11,7 +11,9 @@
     --danger: #b42318;
     --danger-hover: #8c1d18;
     --focus: #8b5cf6;
-    --inventory-sticky-offset: 220px;
+    --sticky-topbar-height: 56px;
+    --sticky-header-height: 76px;
+    --sticky-content-offset: 220px;
 }
 
 * {
@@ -29,6 +31,19 @@ body {
 
 a {
     color: inherit;
+}
+
+.icon {
+    width: 1em;
+    height: 1em;
+    flex: 0 0 auto;
+    stroke-width: 2;
+    vertical-align: -0.125em;
+}
+
+.link-button .icon,
+.table-link .icon {
+    margin-right: 6px;
 }
 
 :focus-visible {
@@ -93,9 +108,10 @@ a {
     margin-bottom: 24px;
 }
 
-.page--inventory .page__header {
+.page--inventory .page__header,
+.page--sticky-list .page__header {
     position: sticky;
-    top: var(--inventory-topbar-height, 56px);
+    top: var(--sticky-topbar-height, 56px);
     z-index: 20;
     margin-bottom: 0;
     padding: 20px 0 16px;
@@ -132,6 +148,7 @@ h2 {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     min-height: 40px;
     padding: 0 14px;
     border: 1px solid var(--line-strong);
@@ -143,6 +160,17 @@ h2 {
     text-decoration: none;
     cursor: pointer;
     white-space: nowrap;
+}
+
+.button--small {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.9rem;
+}
+
+.button--icon {
+    width: 32px;
+    padding: 0;
 }
 
 .button--primary {
@@ -175,7 +203,7 @@ h2 {
 
 .page--inventory .toolbar {
     position: sticky;
-    top: calc(var(--inventory-topbar-height, 56px) + var(--inventory-header-height, 76px));
+    top: calc(var(--sticky-topbar-height, 56px) + var(--sticky-header-height, 76px));
     z-index: 19;
     margin-bottom: 0;
     padding-bottom: 16px;
@@ -453,8 +481,9 @@ h2 {
     border-radius: 8px;
 }
 
-.page--inventory .table-section {
-    max-height: calc(100vh - var(--inventory-sticky-offset) - 24px);
+.page--inventory .table-section,
+.page--sticky-list .table-section {
+    max-height: calc(100vh - var(--sticky-content-offset) - 24px);
     overflow: auto;
 }
 
@@ -463,7 +492,8 @@ h2 {
     overflow-x: auto;
 }
 
-.page--inventory .table-wrap {
+.page--inventory .table-wrap,
+.page--sticky-list .table-wrap {
     overflow: visible;
 }
 
@@ -594,7 +624,9 @@ h2 {
 
 .invoice-cell {
     display: grid;
-    gap: 6px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
     min-width: 160px;
     max-width: 260px;
 }

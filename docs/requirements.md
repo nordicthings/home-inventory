@@ -24,12 +24,9 @@ Noch nicht enthalten:
 - Genaue Position am Ort
 - Mobiler oder externer Zugriff
 
-## Version 2
+Die UI-Verbesserungen für numerische Eingaben sind bereits umgesetzt und gehören nicht mehr zum offenen Versions-Backlog.
 
-Die UI-Verbesserungen für numerische Eingaben sind bereits umgesetzt und gehören nicht mehr zum offenen Version-2-Backlog.
-
-Für Version 2 geplant:
-
+## Version 1.2 
 - An einen Zugang soll eine PDF-Rechnung angehängt werden können.
 - Beim Anhängen einer Rechnung soll der Benutzer über einen Dateiauswahldialog eine PDF-Datei auswählen und in die Anwendung hochladen können.
 - Hochgeladene Rechnungen sollen zunächst in der Anwendung zum Download angeboten werden.
@@ -41,16 +38,28 @@ Für Version 2 geplant:
 - Rechnungsdateien werden im Dateisystem gespeichert. In der Datenbank werden nur die fachlich und technisch notwendigen Referenzen gespeichert, insbesondere der ursprüngliche Dateiname.
 - Der Ablagepfad soll konfigurierbar sein. Lokal wird standardmäßig `.local/files` verwendet. Für Docker- bzw. NAS-Betrieb ist ein persistentes Volume vorgesehen, z. B. `/data/home-inventory/files`.
 - Die Rechnungsaktionen sollen platzsparend direkt im Bereich des jeweiligen Zugangs dargestellt werden. Bei vorhandener Rechnung wird der Dateiname angezeigt; Download, Ersetzen und Löschen werden als kompakte Icon-Aktionen angeboten.
-- In einem späteren Schritt innerhalb von Version 2 soll eine Vorschau der PDF-Rechnung direkt in der Anwendung möglich sein.
-- Über den Datenbestand soll ein Report erstellt werden können.
-- Der Report soll die aktuell gefilterten Gegenstände berücksichtigen.
-- Der Report soll die gefilterten Gegenstände mit ausgewählten Details auflisten.
-- Der Report soll eine Gesamtsumme über die gelisteten Gegenstände ausweisen.
-- Die Gegenstandsliste soll sortiert werden können.
-- Für Version 2 reicht es aus, die Gegenstandsliste nach genau einer Spalte gleichzeitig zu sortieren.
+- Die Gegenstandsliste soll sortiert werden können. Dabei reicht es aus, die Gegenstandsliste nach genau einer Spalte gleichzeitig zu sortieren.
 - Filter- und Sortiereinstellungen der Gegenstandsliste sollen erhalten bleiben, wenn der Benutzer von der Liste auf eine Detailseite wechselt, dort Änderungen vornimmt und anschließend zur Liste zurückkehrt.
 - Der obere Bereich der Gegenstandsliste soll beim Scrollen sichtbar bleiben, mindestens die Tabellenkopfzeile.
 - Die Anwendung soll ein Favicon bekommen.
+
+## Version 1.3
+- Die Seiten- und Tabellenköpfe der Stammdatenseiten für Kategorien, Orte und Bezugsquellen sollen beim Scrollen sichtbar bleiben, analog zur Gegenstandsliste.
+- Aktionen auf der Gegenstandsdetailseite sollen einheitlich als Buttons erkennbar sein. Das betrifft insbesondere Bestandsaktionen, Zugangsaktionen und Rechnungsaktionen.
+- Auf der Gegenstandsdetailseite soll die Taste `Esc` wie die Aktion `Zurück zur Liste` wirken.
+- Änderungsdialoge für Kategorien, Orte und Bezugsquellen sollen mit `Esc` abgebrochen werden können.
+- Die Gegenstandsliste soll eine zusätzliche Spalte `Status` bekommen.
+- In der Statusspalte der Gegenstandsliste soll höchstens ein Icon aus dem anwendungsweiten Icon-Set Lucide angezeigt werden. Die fachliche Priorität lautet: `Zu prüfen` vor `Rechnung liegt vor` vor `Schätzwert`.
+- Ein Gegenstand soll mit `Zu prüfen` markiert werden können, wenn zu ihm noch Recherche notwendig ist, z. B. Suche nach Belegen oder Klärung des Verbleibs.
+
+## Version 2
+
+- Es soll eine Vorschau der PDF-Rechnung direkt in der Anwendung möglich sein.
+- Über den Datenbestand soll ein Report erstellt werden können.
+  - Der Report soll die aktuell gefilterten Gegenstände berücksichtigen.
+  - Der Report soll die gefilterten Gegenstände mit ausgewählten Details auflisten.
+  - Der Report soll eine Gesamtsumme über die gelisteten Gegenstände ausweisen.
+  - Der Report soll als PDF exportiert werden.
 
 Nicht Teil von Version 2:
 
@@ -65,9 +74,10 @@ Jeder Gegenstand hat diese Felder:
 - Name
 - Kategorie
 - Schätzwert
+- Zu prüfen
 - Freie Notiz
 
-Name und Kategorie sind Pflichtfelder. Der Schätzwert ist optional. Wenn kein Schätzwert erfasst wird, wird 0 verwendet. Die Notiz ist optional.
+Name und Kategorie sind Pflichtfelder. Der Schätzwert ist optional. Wenn kein Schätzwert erfasst wird, wird 0 verwendet. `Zu prüfen` ist ein Boolean-Feld und wird in der UI als Checkbox dargestellt. Die Notiz ist optional.
 
 Jeder Gegenstand hat eine interne eindeutige ID. IDs werden in der Domäne grundsätzlich als UUID modelliert.
 
@@ -78,6 +88,8 @@ Die Durchsetzung der eindeutigen normalisierten Gegenstandsnamen erfolgt später
 Der Name eines Gegenstands kann nachträglich geändert werden.
 
 Wenn ein Gegenstand gelöscht wird, werden auch alle Zuordnungen dieses Gegenstands entfernt.
+
+Ein Gegenstand kann mit `Zu prüfen` markiert werden, wenn zu ihm noch Recherche notwendig ist. Beispiele sind die Suche nach Belegen, die Klärung des Verbleibs oder sonstige offene fachliche Nacharbeiten.
 
 Ein Gegenstand gilt als vorhanden, sobald er im Datenbestand auftaucht. Dafür ist keine Ortszuordnung erforderlich.
 
@@ -259,7 +271,7 @@ Initiale Orte, Kategorien und Bezugsquellen werden über ein Liquibase- oder SQL
 
 ### Gegenstand hinzufügen
 
-Ein Gegenstand wird mit den zentralen Attributen Name und Kategorie hinzugefügt. Der Schätzwert und die Notiz sind optional.
+Ein Gegenstand wird mit den zentralen Attributen Name und Kategorie hinzugefügt. Der Schätzwert, `Zu prüfen` und die Notiz sind optional.
 
 Beim Hinzufügen muss eine existierende Kategorie ausgewählt werden.
 
@@ -275,7 +287,7 @@ Es wird keine künstliche Bezugsquelle wie `Unbekannt` verwendet, nur um unbekan
 
 ### Gegenstand bearbeiten
 
-Beim Bearbeiten eines Gegenstands können Name, Kategorie, Schätzwert und Notiz geändert werden.
+Beim Bearbeiten eines Gegenstands können Name, Kategorie, Schätzwert, `Zu prüfen` und Notiz geändert werden.
 
 Beim Umbenennen eines Gegenstands muss der normalisierte neue Name eindeutig sein. Der bearbeitete Gegenstand selbst wird dabei nicht als Konflikt betrachtet.
 
@@ -450,6 +462,7 @@ Die Hauptliste zeigt Gegenstände mit folgenden Spalten:
 - Name
 - Kategorie
 - Gesamtmenge
+- Status
 - Durchschnittlicher Stückwert
 - Gesamtwert
 
@@ -458,6 +471,20 @@ Die Hauptliste ist standardmäßig alphabetisch nach Name sortiert.
 Gegenstände mit Gesamtmenge 0 werden in der Hauptliste angezeigt.
 
 Wenn kein durchschnittlicher Stückwert oder Gesamtwert bestimmbar ist, zeigt die UI `unbekannt`.
+
+Die Statusspalte zeigt ein Lucide-Icon, wenn für den Gegenstand ein besonderer Status vorliegt. Es wird immer höchstens ein Status-Icon angezeigt.
+
+Ist ein Gegenstand als `Zu prüfen` markiert, zeigt die Statusspalte das Lucide-Icon `shield-question-mark`.
+
+Ist ein Gegenstand nicht als `Zu prüfen` markiert und liegt für mindestens einen Zugang des Gegenstands eine Rechnung vor, zeigt die Statusspalte das Lucide-Icon `file-text`.
+
+Ist ein Gegenstand nicht als `Zu prüfen` markiert, liegt keine Rechnung vor und ist ein konkreter Schätzwert größer als 0 erfasst, zeigt die Statusspalte das Lucide-Icon `badge-euro`.
+
+Wenn ein Gegenstand als `Zu prüfen` markiert ist, übersteuert dieser Status die Status `Rechnung liegt vor` und `Schätzwert`.
+
+Wenn eine Rechnung vorliegt und zugleich ein Schätzwert erfasst ist, übersteuert `Rechnung liegt vor` den Status `Schätzwert`.
+
+Liegt keiner dieser Status vor, bleibt die Statusspalte für den Gegenstand leer.
 
 ### Gegenstandsdetails anzeigen
 
@@ -468,6 +495,10 @@ Die Detailansicht eines Gegenstands zeigt:
 - Zugänge
 - berechneter durchschnittlicher Stückwert
 - berechneter Gesamtwert
+
+Auf der Detailansicht sollen alle fachlichen Aktionen als Buttons erkennbar sein. Dazu gehören insbesondere `Bearbeiten`, `Löschen`, `Zurück zur Liste`, die Bestandsaktionen `Ändern`, `Umlagern` und `Entfernen`, die Zugangsaktionen `Ändern` und `Löschen` sowie die Rechnungsaktionen `Download`, `Ersetzen` und `Löschen`.
+
+Auf der Detailansicht soll `Esc` dieselbe Wirkung haben wie `Zurück zur Liste`.
 
 ### Hinweise und Fehler
 
@@ -502,7 +533,7 @@ Die Use Cases werden in der Anwendung einheitlich mit verb-orientierten englisch
 Für Version 1 sind folgende Use Cases vorgesehen:
 
 - `CreateItem`: Gegenstand hinzufügen.
-- `UpdateItem`: Name, Kategorie, Schätzwert und Notiz eines Gegenstands ändern.
+- `UpdateItem`: Name, Kategorie, Schätzwert, `Zu prüfen` und Notiz eines Gegenstands ändern.
 - `DeleteItem`: Gegenstand inklusive Zuordnungen löschen.
 - `GetItemDetails`: Detailansicht eines Gegenstands mit Ortsbeständen und Zugängen laden.
 - `SearchItems`: Hauptliste mit Filtern nach Name, Ort, Bezugsquelle und Kategorie laden.
@@ -529,6 +560,10 @@ Für Version 1 sind folgende Use Cases vorgesehen:
 Die Gestaltung ist schlicht, klar und funktional.
 
 Orte, Kategorien und Bezugsquellen werden in der UI alphabetisch sortiert.
+
+Auf den Listen für Gegenstände, Kategorien, Orte und Bezugsquellen bleiben Seitenkopf und Tabellenkopf beim Scrollen sichtbar.
+
+Änderungsdialoge für Kategorien, Orte und Bezugsquellen können mit `Esc` abgebrochen werden. Das entspricht fachlich der jeweiligen Abbrechen- bzw. Zurück-Aktion des Dialogs.
 
 ## Glossar
 
@@ -565,6 +600,8 @@ Domänenobjekte werden im Code englisch benannt. Die Anwendungsoberfläche bleib
 | Kaufpreis | Purchase Price | Preisangabe an der Zuordnung zwischen Gegenstand und Bezugsquelle. Kaufpreise beziehen sich immer auf ein Stück. Der Wert 0 bedeutet „unbekannt“ und nicht „kostenlos“. |
 | Kaufdatum | Purchase Date | Datum des Kaufs, sofern bekannt. |
 | Gesamtwert | Total Value | Gesamtwert eines Gegenstands. Er ergibt sich aus der Gesamtmenge an Orten und dem durchschnittlichen Stückwert. |
+| Status | Status | Verdichtete Anzeige in der Gegenstandsliste, die besondere Wert- oder Klärungszustände eines Gegenstands visualisiert. Pro Gegenstand wird höchstens ein Status angezeigt. |
+| Zu prüfen | To Be Reviewed | Boolean-Markierung an einem Gegenstand für noch notwendige Recherche oder Klärung, z. B. Suche nach Belegen oder Klärung des Verbleibs. |
 | Notiz | Note | Freitextfeld für zusätzliche Informationen zu einem Gegenstand. |
 
 ## Später geplant

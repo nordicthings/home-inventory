@@ -8,6 +8,7 @@
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
     <link rel="alternate icon" th:href="@{/favicon.ico}">
     <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
+    <script defer th:src="@{/js/inventory-list-sticky.js}"></script>
 </head>
 <body>
 <header class="topbar">
@@ -22,7 +23,7 @@
     </div>
 </header>
 
-<main class="page">
+<main class="page page--sticky-list">
     <div class="page__header">
         <h1>Bezugsquellen</h1>
         <a class="button button--primary" th:href="@{/sources/new}">Bezugsquelle hinzufügen</a>
