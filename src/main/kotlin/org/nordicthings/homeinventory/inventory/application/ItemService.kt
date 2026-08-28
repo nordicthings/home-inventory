@@ -41,6 +41,7 @@ class ItemService(
             categoryId = item.categoryId,
             categoryName = category.name,
             estimatedValue = item.estimatedValue,
+            reviewRequired = item.reviewRequired,
             note = item.note,
             locationQuantities = item.locationQuantities
                 .map { (locationId, quantity) -> toLocationQuantityDetails(locationId, quantity) }
@@ -75,6 +76,7 @@ class ItemService(
         categoryId: CategoryId,
         estimatedValue: MonetaryValue,
         note: String,
+        reviewRequired: Boolean,
     ): Item {
         ensureUniqueName(name)
         ensureCategoryExists(categoryId)
@@ -85,6 +87,7 @@ class ItemService(
                 categoryId = categoryId,
                 estimatedValue = estimatedValue,
                 note = note,
+                reviewRequired = reviewRequired,
             ),
         )
     }
@@ -95,6 +98,7 @@ class ItemService(
         categoryId: CategoryId,
         estimatedValue: MonetaryValue,
         note: String,
+        reviewRequired: Boolean,
     ): Item {
         val item = findItem(id)
         ensureUniqueName(name, existingId = id)
@@ -102,6 +106,7 @@ class ItemService(
         item.rename(name)
         item.changeCategory(categoryId)
         item.changeEstimatedValue(estimatedValue)
+        item.markReviewRequired(reviewRequired)
         item.changeNote(note)
         return itemRepository.save(item)
     }

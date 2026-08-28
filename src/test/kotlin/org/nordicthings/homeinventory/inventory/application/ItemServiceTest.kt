@@ -75,6 +75,7 @@ class ItemServiceTest {
         assertEquals("Laptop", details.name.value)
         assertEquals("Computer & Peripherie", details.categoryName.value)
         assertEquals(MonetaryValue.of("1000"), details.estimatedValue)
+        assertEquals(false, details.reviewRequired)
         assertEquals("Arbeitsgerät", details.note)
         assertEquals(listOf("Büro", "Küche"), details.locationQuantities.map { it.locationName.value })
         assertEquals(listOf(Quantity.of(2), Quantity.of(1)), details.locationQuantities.map { it.quantity })
@@ -109,6 +110,9 @@ class ItemServiceTest {
                 categoryId = categoryId,
                 categoryName = CategoryName.of("Computer & Peripherie"),
                 totalQuantity = Quantity.of(2),
+                estimatedValue = MonetaryValue.of("800"),
+                reviewRequired = false,
+                hasInvoice = false,
                 averageValue = MonetaryValue.of("800"),
                 totalValue = MonetaryValue.of("1600"),
             ),
@@ -160,10 +164,12 @@ class ItemServiceTest {
             categoryId = category.id,
             estimatedValue = MonetaryValue.of("100"),
             note = "Arbeitsgerät",
+            reviewRequired = true,
         )
 
         assertEquals("Laptop", item.name.value)
         assertEquals(category.id, item.categoryId)
+        assertEquals(true, item.reviewRequired)
         assertEquals("Arbeitsgerät", item.note)
         verify { itemRepository.findByNormalizedName("laptop") }
         verify { categoryRepository.findById(category.id) }
@@ -232,11 +238,13 @@ class ItemServiceTest {
             categoryId = newCategory.id,
             estimatedValue = MonetaryValue.of("250"),
             note = "Massivholz",
+            reviewRequired = true,
         )
 
         assertEquals("Schreibtisch", updatedItem.name.value)
         assertEquals(newCategory.id, updatedItem.categoryId)
         assertEquals(MonetaryValue.of("250"), updatedItem.estimatedValue)
+        assertEquals(true, updatedItem.reviewRequired)
         assertEquals("Massivholz", updatedItem.note)
         verify { itemRepository.save(updatedItem) }
     }
@@ -469,6 +477,9 @@ class ItemServiceTest {
             categoryId = categoryId,
             categoryName = CategoryName.of("Computer & Peripherie"),
             totalQuantity = Quantity.ZERO,
+            estimatedValue = MonetaryValue.unknown(),
+            reviewRequired = false,
+            hasInvoice = false,
             averageValue = totalValue,
             totalValue = totalValue,
         )

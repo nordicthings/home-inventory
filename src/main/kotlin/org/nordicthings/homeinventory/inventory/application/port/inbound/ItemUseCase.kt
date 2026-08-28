@@ -17,6 +17,7 @@ interface ItemUseCase {
         categoryId: CategoryId,
         estimatedValue: MonetaryValue,
         note: String = "",
+        reviewRequired: Boolean = false,
     ): Item
 
     fun updateItem(
@@ -25,6 +26,7 @@ interface ItemUseCase {
         categoryId: CategoryId,
         estimatedValue: MonetaryValue,
         note: String = "",
+        reviewRequired: Boolean = false,
     ): Item
 
     fun renameItem(id: ItemId, name: ItemName): Item

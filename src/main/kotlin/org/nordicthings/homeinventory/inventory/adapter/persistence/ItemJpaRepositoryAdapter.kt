@@ -18,6 +18,7 @@ class ItemJpaRepositoryAdapter(
     private val categoryRepository: CategoryJpaEntityRepository,
     private val locationQuantityRepository: ItemLocationQuantityJpaEntityRepository,
     private val sourceRepository: ItemSourceJpaEntityRepository,
+    private val invoiceRepository: AcquisitionInvoiceJpaEntityRepository,
 ) : ItemRepository {
 
     override fun findById(id: ItemId): Item? =
@@ -53,6 +54,9 @@ class ItemJpaRepositoryAdapter(
                     categoryId = item.categoryId,
                     categoryName = loadCategoryName(item.categoryId),
                     totalQuantity = item.totalQuantity,
+                    estimatedValue = item.estimatedValue,
+                    reviewRequired = item.reviewRequired,
+                    hasInvoice = hasInvoice(item),
                     averageValue = item.value,
                     totalValue = item.totalValue,
                 )
@@ -99,4 +103,9 @@ class ItemJpaRepositoryAdapter(
         categoryRepository.findById(id.value)
             .map { it.toDomain().name }
             .orElseThrow { IllegalStateException("Category does not exist for item: $id") }
+
+    private fun hasInvoice(item: Item): Boolean {
+        val acquisitionIds = item.sources.map { it.id.value }
+        return acquisitionIds.isNotEmpty() && invoiceRepository.existsByAcquisitionIdIn(acquisitionIds)
+    }
 }

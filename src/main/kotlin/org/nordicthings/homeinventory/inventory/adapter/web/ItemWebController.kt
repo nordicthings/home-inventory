@@ -373,6 +373,7 @@ class ItemWebController(
                 name = ItemName.of(form.name),
                 categoryId = CategoryId(UUID.fromString(form.categoryId)),
                 estimatedValue = MonetaryValue.of(parseEstimatedValue(form.estimatedValue)),
+                reviewRequired = form.reviewRequired,
                 note = form.note.trim(),
             )
             "redirect:/items/${item.id.value}"
@@ -406,6 +407,7 @@ class ItemWebController(
                 name = ItemName.of(form.name),
                 categoryId = CategoryId(UUID.fromString(form.categoryId)),
                 estimatedValue = MonetaryValue.of(parseEstimatedValue(form.estimatedValue)),
+                reviewRequired = form.reviewRequired,
                 note = form.note.trim(),
             )
             "redirect:/items/$id"

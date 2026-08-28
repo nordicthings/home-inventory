@@ -449,3 +449,5 @@ databaseChangeLog:
               - column: { name: details, value: "" }
   - include:
       file: db/changelog/changes/004-create-acquisition-invoices.yml
+  - include:
+      file: db/changelog/changes/005-add-item-review-required.yml

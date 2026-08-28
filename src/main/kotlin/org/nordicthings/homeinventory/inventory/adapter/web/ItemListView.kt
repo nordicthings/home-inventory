@@ -44,8 +44,14 @@ data class ItemListRowView(
     val name: String,
     val categoryName: String,
     val totalQuantity: String,
+    val status: ItemStatusView?,
     val averageValue: String,
     val totalValue: String,
+)
+
+data class ItemStatusView(
+    val icon: String,
+    val label: String,
 )
 
 fun ItemListEntry.toRowView(): ItemListRowView =
@@ -54,9 +60,18 @@ fun ItemListEntry.toRowView(): ItemListRowView =
         name = name.value,
         categoryName = categoryName.value,
         totalQuantity = totalQuantity.value.formatIntegerForView(),
+        status = toStatusView(),
         averageValue = averageValue.formatForView(),
         totalValue = totalValue.formatForView(),
     )
+
+private fun ItemListEntry.toStatusView(): ItemStatusView? =
+    when {
+        reviewRequired -> ItemStatusView(icon = "shield-question-mark", label = "Zu prüfen")
+        hasInvoice -> ItemStatusView(icon = "file-text", label = "Rechnung liegt vor")
+        estimatedValue.isKnown -> ItemStatusView(icon = "badge-euro", label = "Schätzwert")
+        else -> null
+    }
 
 fun MonetaryValue?.formatForView(): String =
     this?.takeIf { it.isKnown }?.let {

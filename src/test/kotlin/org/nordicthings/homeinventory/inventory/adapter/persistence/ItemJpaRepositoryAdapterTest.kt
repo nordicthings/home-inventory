@@ -102,17 +102,18 @@ class ItemJpaRepositoryAdapterTest {
 
         itemRepository.save(item)
 
-        val foundItem = itemRepository.findById(item.id)
-        assertEquals(item.id, foundItem?.id)
-        assertEquals("Laptop", foundItem?.name?.value)
-        assertEquals(category.id, foundItem?.categoryId)
-        assertEquals(MonetaryValue.of("1000"), foundItem?.estimatedValue)
-        assertEquals("Arbeitsgerät", foundItem?.note)
-        assertEquals(Quantity.of(3), foundItem?.totalQuantity)
-        assertEquals(Quantity.of(1), foundItem?.locationQuantities?.get(kitchen.id))
-        assertEquals(Quantity.of(2), foundItem?.locationQuantities?.get(office.id))
-        assertEquals(2, foundItem?.sources?.size)
-        assertEquals(MonetaryValue.of("800"), foundItem?.value)
+        val foundItem = assertNotNull(itemRepository.findById(item.id))
+        assertEquals(item.id, foundItem.id)
+        assertEquals("Laptop", foundItem.name.value)
+        assertEquals(category.id, foundItem.categoryId)
+        assertEquals(MonetaryValue.of("1000"), foundItem.estimatedValue)
+        assertFalse(foundItem.reviewRequired)
+        assertEquals("Arbeitsgerät", foundItem.note)
+        assertEquals(Quantity.of(3), foundItem.totalQuantity)
+        assertEquals(Quantity.of(1), foundItem.locationQuantities[kitchen.id])
+        assertEquals(Quantity.of(2), foundItem.locationQuantities[office.id])
+        assertEquals(2, foundItem.sources.size)
+        assertEquals(MonetaryValue.of("800"), foundItem.value)
     }
 
     @Test
@@ -158,8 +159,50 @@ class ItemJpaRepositoryAdapterTest {
         assertEquals(listOf("Laptop", "Monitor"), entries.map { it.name.value })
         assertEquals("Computer & Peripherie", entries.first().categoryName.value)
         assertEquals(Quantity.of(2), entries.first().totalQuantity)
+        assertEquals(MonetaryValue.of("1000"), entries.first().estimatedValue)
+        assertFalse(entries.first().hasInvoice)
         assertEquals(MonetaryValue.of("800"), entries.first().averageValue)
         assertEquals(MonetaryValue.of("1600"), entries.first().totalValue)
+    }
+
+    @Test
+    fun `marks item list entries with existing acquisition invoice`() {
+        val category = existingCategory()
+        val source = existingSource("Amazon")
+        val laptop = existingItem(category.id, "Laptop")
+        laptop.recordAcquisition(source.id, Quantity.of(1), MonetaryValue.of("800"), null)
+        val monitor = existingItem(category.id, "Monitor")
+        monitor.recordAcquisition(source.id, Quantity.of(1), MonetaryValue.of("300"), null)
+        itemRepository.save(laptop)
+        itemRepository.save(monitor)
+        val laptopAcquisitionId = assertNotNull(itemRepository.findById(laptop.id)).sources.single().id
+        acquisitionInvoiceJpaEntityRepository.save(
+            AcquisitionInvoiceJpaEntity(
+                id = java.util.UUID.randomUUID(),
+                acquisitionId = laptopAcquisitionId.value,
+                originalFilename = "rechnung.pdf",
+                storedFilename = "stored.pdf",
+            ),
+        )
+
+        val entries = itemRepository.search(ItemSearchCriteria())
+
+        assertEquals(true, entries.single { it.name.value == "Laptop" }.hasInvoice)
+        assertEquals(false, entries.single { it.name.value == "Monitor" }.hasInvoice)
+    }
+
+    @Test
+    fun `saves and finds review required item flag`() {
+        val category = existingCategory()
+        val item = existingItem(category.id, "Prüfen-Laptop")
+        item.markReviewRequired(true)
+
+        itemRepository.save(item)
+
+        val foundItem = assertNotNull(itemRepository.findById(item.id))
+        val listEntry = itemRepository.search(ItemSearchCriteria()).single()
+        assertTrue(foundItem.reviewRequired)
+        assertTrue(listEntry.reviewRequired)
     }
 
     @Test

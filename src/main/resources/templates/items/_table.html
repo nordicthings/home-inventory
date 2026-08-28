@@ -29,6 +29,7 @@
                     <span class="sort-link__indicator" th:text="${page.sort.indicatorFor('quantity')}"></span>
                 </a>
             </th>
+            <th class="status-cell" scope="col">Status</th>
             <th class="number" scope="col">
                 <a class="sort-link sort-link--number"
                    th:classappend="${page.sort.field == 'averageValue'} ? ' sort-link--active'"
@@ -54,11 +55,20 @@
             </td>
             <td th:text="${item.categoryName}">Computer &amp; Peripherie</td>
             <td class="number" th:text="${item.totalQuantity}">2</td>
+            <td class="status-cell">
+                <svg class="icon status-icon"
+                     th:if="${item.status != null}"
+                     role="img"
+                     th:title="${item.status.label}"
+                     th:aria-label="${item.status.label}">
+                    <use th:href="@{'/icons/lucide.svg#' + ${item.status.icon}}"></use>
+                </svg>
+            </td>
             <td class="number" th:text="${item.averageValue}">800.00 EUR</td>
             <td class="number" th:text="${item.totalValue}">1600.00 EUR</td>
         </tr>
         <tr th:if="${#lists.isEmpty(items)}">
-            <td class="empty" colspan="5">Keine Gegenstände gefunden</td>
+            <td class="empty" colspan="6">Keine Gegenstände gefunden</td>
         </tr>
         </tbody>
     </table>

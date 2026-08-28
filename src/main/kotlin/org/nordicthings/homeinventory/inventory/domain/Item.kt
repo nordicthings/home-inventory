@@ -15,6 +15,7 @@ class Item(
     categoryId: CategoryId,
     estimatedValue: MonetaryValue,
     note: String = "",
+    reviewRequired: Boolean = false,
 ) {
     private val mutableLocationQuantities = linkedMapOf<LocationId, Quantity>()
     private val mutableSources = linkedMapOf<ItemSourceKey, ItemSource>()
@@ -26,6 +27,9 @@ class Item(
         private set
 
     var estimatedValue: MonetaryValue = estimatedValue
+        private set
+
+    var reviewRequired: Boolean = reviewRequired
         private set
 
     var note: String = note
@@ -57,6 +61,10 @@ class Item(
 
     fun changeEstimatedValue(estimatedValue: MonetaryValue) {
         this.estimatedValue = estimatedValue
+    }
+
+    fun markReviewRequired(reviewRequired: Boolean) {
+        this.reviewRequired = reviewRequired
     }
 
     fun changeNote(note: String) {

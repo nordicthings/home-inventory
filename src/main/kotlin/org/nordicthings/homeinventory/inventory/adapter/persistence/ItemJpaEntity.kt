@@ -29,6 +29,9 @@ class ItemJpaEntity(
     @Column(name = "estimated_value_currency", nullable = false)
     var estimatedValueCurrency: String,
 
+    @Column(name = "review_required", nullable = false)
+    var reviewRequired: Boolean,
+
     @Column(name = "note", nullable = false)
     var note: String,
 )

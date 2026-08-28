@@ -127,6 +127,9 @@ class ItemWebControllerTest {
         assertContains(response.body(), "Name")
         assertContains(response.body(), "Kategorie auswählen")
         assertContains(response.body(), "Schätzwert")
+        assertContains(response.body(), """type="checkbox"""")
+        assertContains(response.body(), """name="reviewRequired"""")
+        assertContains(response.body(), "Zu prüfen")
         assertContains(response.body(), """type="text"""")
         assertContains(response.body(), "EUR")
         assertContains(response.body(), "Computer &amp; Peripherie")
@@ -187,6 +190,7 @@ class ItemWebControllerTest {
                 "name" to "Laptop",
                 "categoryId" to categoryId,
                 "estimatedValue" to "800",
+                "reviewRequired" to "true",
                 "note" to "Arbeitsgerät",
             ),
         )
@@ -195,6 +199,7 @@ class ItemWebControllerTest {
         val item = assertNotNull(itemRepository.findByNormalizedName("laptop"))
         assertEquals("/items/${item.id.value}", URI.create(response.headers().firstValue("location").orElseThrow()).path)
         assertEquals("Laptop", item.name.value)
+        assertEquals(true, item.reviewRequired)
         assertContains(itemRepository.search(ItemSearchCriteria()).map { it.name.value }, "Laptop")
 
         val detailResponse = get("/items/${item.id.value}")
@@ -205,6 +210,14 @@ class ItemWebControllerTest {
         assertContains(detailResponse.body(), "Laptop")
         assertContains(detailResponse.body(), "Computer &amp; Peripherie")
         assertContains(detailResponse.body(), "800,00 EUR")
+        assertContains(detailResponse.body(), "Zu prüfen")
+        assertContains(detailResponse.body(), "ja")
+
+        val listResponse = get("/items")
+        assertEquals(200, listResponse.statusCode())
+        assertContains(listResponse.body(), """title="Zu prüfen"""")
+        assertContains(listResponse.body(), """aria-label="Zu prüfen"""")
+        assertContains(listResponse.body(), """lucide.svg#shield-question-mark"""")
     }
 
     @Test
@@ -304,6 +317,10 @@ class ItemWebControllerTest {
         val response = get("/items")
 
         assertEquals(200, response.statusCode())
+        assertContains(response.body(), ">Status</th>")
+        assertContains(response.body(), """title="Schätzwert"""")
+        assertContains(response.body(), """aria-label="Schätzwert"""")
+        assertContains(response.body(), """lucide.svg#badge-euro"""")
         assertContains(response.body(), """href="/items/${item.id.value}"""")
         assertContains(response.body(), ">Detail-Link-Laptop</a>")
     }
@@ -370,6 +387,7 @@ class ItemWebControllerTest {
         assertContains(response.body(), """selected="selected">Computer &amp; Peripherie</option>""")
         assertContains(response.body(), """value="800,00"""")
         assertContains(response.body(), "EUR")
+        assertContains(response.body(), """name="reviewRequired"""")
         assertContains(response.body(), "Arbeitsgerät")
         assertContains(response.body(), "Änderungen speichern")
     }
@@ -391,6 +409,7 @@ class ItemWebControllerTest {
                 "name" to "Edit-Schreibtisch",
                 "categoryId" to newCategory.id.value.toString(),
                 "estimatedValue" to "999,99",
+                "reviewRequired" to "true",
                 "note" to "Massivholz",
             ),
         )
@@ -401,6 +420,7 @@ class ItemWebControllerTest {
         assertEquals("Edit-Schreibtisch", updatedItem.name.value)
         assertEquals(newCategory.id, updatedItem.categoryId)
         assertEquals(MonetaryValue.of("999.99"), updatedItem.estimatedValue)
+        assertEquals(true, updatedItem.reviewRequired)
         assertEquals("Massivholz", updatedItem.note)
 
         val detailResponse = get("/items/${item.id.value}")
@@ -408,6 +428,7 @@ class ItemWebControllerTest {
         assertContains(detailResponse.body(), "<h1>Edit-Schreibtisch</h1>")
         assertContains(detailResponse.body(), "Möbel")
         assertContains(detailResponse.body(), "999,99 EUR")
+        assertContains(detailResponse.body(), "ja")
         assertContains(detailResponse.body(), "Massivholz")
     }
 
@@ -976,6 +997,12 @@ class ItemWebControllerTest {
         assertContains(detailResponse.body(), "rechnung.pdf")
         assertContains(detailResponse.body(), """invoice/download"""")
         assertContains(detailResponse.body(), """invoice/delete"""")
+
+        val listResponse = get("/items")
+        assertEquals(200, listResponse.statusCode())
+        assertContains(listResponse.body(), """title="Rechnung liegt vor"""")
+        assertContains(listResponse.body(), """aria-label="Rechnung liegt vor"""")
+        assertContains(listResponse.body(), """lucide.svg#file-text"""")
 
         val downloadResponse = getBytes("/items/${item.id.value}/acquisitions/${acquisitionId.value}/invoice/download")
         assertEquals(200, downloadResponse.statusCode())

@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ItemTest {
 
@@ -44,6 +45,15 @@ class ItemTest {
         val newEstimatedValue = currentEstimatedValue * Quantity.of(2)
         item.changeEstimatedValue(newEstimatedValue)
         assertEquals(newEstimatedValue, item.estimatedValue)
+    }
+
+    @Test
+    fun `item can be marked as review required`() {
+        val item = testItem()
+
+        item.markReviewRequired(true)
+
+        assertTrue(item.reviewRequired)
     }
 
     @Test

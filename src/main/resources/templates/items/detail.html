@@ -60,6 +60,10 @@
                 <dd th:text="${page.estimatedValue}">800,00 EUR</dd>
             </div>
             <div>
+                <dt>Zu prüfen</dt>
+                <dd th:text="${page.reviewRequired ? 'ja' : 'nein'}">nein</dd>
+            </div>
+            <div>
                 <dt>Gesamtmenge</dt>
                 <dd th:text="${page.totalQuantity}">2</dd>
             </div>

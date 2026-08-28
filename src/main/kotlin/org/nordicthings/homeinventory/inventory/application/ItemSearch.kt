@@ -30,6 +30,9 @@ data class ItemListEntry(
     val categoryId: CategoryId,
     val categoryName: CategoryName,
     val totalQuantity: Quantity,
+    val estimatedValue: MonetaryValue,
+    val reviewRequired: Boolean,
+    val hasInvoice: Boolean,
     val averageValue: MonetaryValue?,
     val totalValue: MonetaryValue?,
 )

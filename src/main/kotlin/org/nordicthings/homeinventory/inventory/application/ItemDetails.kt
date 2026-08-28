@@ -20,6 +20,7 @@ data class ItemDetails(
     val categoryId: CategoryId,
     val categoryName: CategoryName,
     val estimatedValue: MonetaryValue,
+    val reviewRequired: Boolean,
     val note: String,
     val locationQuantities: List<ItemLocationQuantityDetails>,
     val acquisitions: List<ItemAcquisitionDetails>,

@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-add-item-review-required
+      author: codex
+      changes:
+        - addColumn:
+            tableName: inventory_item
+            columns:
+              - column:
+                  name: review_required
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

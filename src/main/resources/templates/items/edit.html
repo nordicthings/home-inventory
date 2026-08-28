@@ -74,6 +74,15 @@
             <p class="field-error" th:if="${page.errorFor('estimatedValue') != null}" th:text="${page.errorFor('estimatedValue')}">Schätzwert ist ungültig.</p>
         </div>
 
+        <label class="checkbox-field" for="reviewRequired">
+            <input id="reviewRequired"
+                   name="reviewRequired"
+                   type="checkbox"
+                   value="true"
+                   th:checked="${page.form.reviewRequired}">
+            <span>Zu prüfen</span>
+        </label>
+
         <div class="field">
             <label for="note">Notiz</label>
             <textarea id="note" name="note" rows="5" th:text="${page.form.note}"></textarea>

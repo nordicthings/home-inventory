@@ -19,6 +19,7 @@ fun Item.toJpaEntity(): ItemJpaEntity =
         categoryId = categoryId.value,
         estimatedValueAmount = estimatedValue.amount,
         estimatedValueCurrency = estimatedValue.currency.currencyCode,
+        reviewRequired = reviewRequired,
         note = note,
     )
 
@@ -55,6 +56,7 @@ fun ItemJpaEntity.toDomain(
         name = ItemName.of(name),
         categoryId = CategoryId(categoryId),
         estimatedValue = MonetaryValue.of(estimatedValueAmount),
+        reviewRequired = reviewRequired,
         note = note,
     )
 

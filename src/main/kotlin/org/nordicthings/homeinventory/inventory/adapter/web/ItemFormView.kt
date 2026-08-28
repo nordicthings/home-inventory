@@ -6,6 +6,7 @@ data class ItemCreateForm(
     var name: String = "",
     var categoryId: String = "",
     var estimatedValue: String = "",
+    var reviewRequired: Boolean = false,
     var note: String = "",
 )
 
@@ -13,6 +14,7 @@ data class ItemEditForm(
     var name: String = "",
     var categoryId: String = "",
     var estimatedValue: String = "",
+    var reviewRequired: Boolean = false,
     var note: String = "",
 )
 
@@ -115,5 +117,6 @@ fun ItemDetails.toEditForm(): ItemEditForm =
         name = name.value,
         categoryId = categoryId.value.toString(),
         estimatedValue = estimatedValue.formatAmountForForm(),
+        reviewRequired = reviewRequired,
         note = note,
     )
