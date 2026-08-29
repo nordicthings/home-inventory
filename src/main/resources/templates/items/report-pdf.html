@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <title>Inventarreport</title>
+    <style>
+        @page {
+            margin: 10mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: #1d2430;
+            font-family: Arial, sans-serif;
+            font-size: 8.5pt;
+            line-height: 1.25;
+        }
+
+        h1,
+        h2,
+        h3,
+        p,
+        dl {
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 14pt;
+        }
+
+        h2 {
+            font-size: 10pt;
+        }
+
+        h3 {
+            font-size: 8.5pt;
+        }
+
+        .muted {
+            color: #647084;
+        }
+
+        .report-title {
+            display: table;
+            width: 100%;
+            margin-bottom: 5mm;
+        }
+
+        .report-title h1,
+        .report-title__date {
+            display: table-cell;
+            vertical-align: baseline;
+        }
+
+        .report-title__date {
+            text-align: right;
+            font-size: 8pt;
+            color: #647084;
+        }
+
+        .summary {
+            display: table;
+            width: 100%;
+            margin-bottom: 4mm;
+            padding-bottom: 3mm;
+            border-bottom: 1px solid #d9dee7;
+        }
+
+        .summary__filters,
+        .summary__totals {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+        }
+
+        .summary__totals {
+            text-align: right;
+        }
+
+        .summary-list {
+            display: inline-table;
+            border-spacing: 1.5mm 0;
+        }
+
+        .summary-list div {
+            display: table-cell;
+            min-width: 24mm;
+            text-align: left;
+        }
+
+        .summary__totals .summary-list div {
+            padding: 1.25mm;
+            background: #eef1f5;
+        }
+
+        dt {
+            color: #647084;
+            font-size: 7pt;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        dd {
+            margin: 0.5mm 0 0;
+            font-weight: 700;
+        }
+
+        .report-item {
+            margin-bottom: 3mm;
+            border: 1px solid #d9dee7;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .report-item__header {
+            display: table;
+            width: 100%;
+            border-bottom: 1px solid #d9dee7;
+        }
+
+        .report-item--without-acquisitions .report-item__header {
+            border-bottom: 0;
+        }
+
+        .report-item__name,
+        .report-item__meta,
+        .report-item__values {
+            display: table-cell;
+            vertical-align: top;
+        }
+
+        .report-item__name {
+            width: auto;
+            padding: 2.5mm 0 2.5mm 2.5mm;
+        }
+
+        .report-item__name h2 {
+            font-weight: 800;
+        }
+
+        .report-item__meta {
+            width: 34mm;
+            padding: 2.5mm 2.5mm;
+        }
+
+        .report-item__values {
+            width: 78mm;
+            padding: 2.5mm 2.5mm 2.5mm 0;
+        }
+
+        .value-list {
+            display: table;
+            width: 78mm;
+            table-layout: fixed;
+            border-spacing: 0;
+        }
+
+        .value-list div {
+            display: table-cell;
+            width: 33.333%;
+            padding: 1.25mm;
+            background: #eef1f5;
+            text-align: left;
+        }
+
+        .value-list div + div {
+            border-left: 1.5mm solid #ffffff;
+        }
+
+        .acquisitions {
+            padding: 2.5mm;
+        }
+
+        .acquisitions h3 {
+            margin: 0;
+        }
+
+        .acquisitions__layout {
+            display: table;
+            width: 100%;
+        }
+
+        .acquisitions__label {
+            display: table-cell;
+            width: auto;
+            padding-right: 2.5mm;
+            vertical-align: top;
+        }
+
+        .acquisitions__table {
+            display: table-cell;
+            width: 78mm;
+            vertical-align: top;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 1.25mm 1.5mm;
+            border-bottom: 1px solid #d9dee7;
+            text-align: left;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        th {
+            background: #eef1f5;
+            color: #647084;
+            font-size: 7pt;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .number {
+            text-align: right;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+<div class="report-title">
+    <h1>Inventarreport</h1>
+    <p class="report-title__date">Erstellt am <span th:text="${page.generatedDate}">29.08.2026</span></p>
+</div>
+
+<section class="summary">
+    <div class="summary__filters">
+        <p class="muted" th:if="${#lists.isEmpty(page.filters)}">Keine Filter gesetzt</p>
+        <dl class="summary-list" th:if="${!#lists.isEmpty(page.filters)}">
+            <div th:each="filter : ${page.filters}">
+                <dt th:text="${filter.label}">Kategorie</dt>
+                <dd th:text="${filter.value}">Computer &amp; Peripherie</dd>
+            </div>
+        </dl>
+    </div>
+    <div class="summary__totals">
+        <dl class="summary-list">
+            <div>
+                <dt>Summe Mengen</dt>
+                <dd th:text="${page.totalQuantity}">12</dd>
+            </div>
+            <div>
+                <dt>Summe Gesamtwerte</dt>
+                <dd th:text="${page.totalValue}">1.200,00 EUR</dd>
+            </div>
+        </dl>
+    </div>
+</section>
+
+<section>
+    <article class="report-item"
+             th:classappend="${#lists.isEmpty(item.acquisitions)} ? ' report-item--without-acquisitions' : ''"
+             th:each="item : ${page.items}">
+        <div class="report-item__header">
+            <div class="report-item__name">
+                <h2 th:text="${item.name}">Laptop</h2>
+            </div>
+            <div class="report-item__meta">
+                <p class="muted" th:text="${item.categoryName}">Computer &amp; Peripherie</p>
+                <p class="muted" th:if="${item.status != null}" th:text="${item.status}">Schätzwert</p>
+            </div>
+            <div class="report-item__values">
+                <dl class="value-list">
+                    <div>
+                        <dt>Menge</dt>
+                        <dd th:text="${item.quantity}">2</dd>
+                    </div>
+                    <div>
+                        <dt>Einzelwert</dt>
+                        <dd th:text="${item.averageValue}">800,00 EUR</dd>
+                    </div>
+                    <div>
+                        <dt>Gesamtwert</dt>
+                        <dd th:text="${item.totalValue}">1.600,00 EUR</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <div class="acquisitions" th:if="${!#lists.isEmpty(item.acquisitions)}">
+            <div class="acquisitions__layout">
+                <div class="acquisitions__label">
+                    <h3>Zugänge</h3>
+                </div>
+                <div class="acquisitions__table">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th scope="col">Bezugsquelle</th>
+                            <th class="number" scope="col">Menge</th>
+                            <th scope="col">Datum</th>
+                            <th class="number" scope="col">Preis</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="acquisition : ${item.acquisitions}">
+                            <td th:text="${acquisition.sourceName}">Amazon</td>
+                            <td class="number" th:text="${acquisition.quantity}">1</td>
+                            <td th:text="${acquisition.purchaseDate}">03.01.2026</td>
+                            <td class="number" th:text="${acquisition.purchasePrice}">800,00 EUR</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </article>
+    <p class="muted" th:if="${#lists.isEmpty(page.items)}">Keine Gegenstände gefunden</p>
+</section>
+</body>
+</html>

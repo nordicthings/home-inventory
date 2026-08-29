@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inventarreport - Nordic Things</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="alternate icon" th:href="@{/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
+    <script defer th:src="@{/js/escape-navigation.js}"></script>
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" th:href="@{/items}">Nordic Things</a>
+        <nav class="nav" aria-label="Hauptnavigation">
+            <a class="nav__link nav__link--active" th:href="@{/items}">Inventar</a>
+            <a class="nav__link" th:href="@{/categories}">Kategorien</a>
+            <a class="nav__link" th:href="@{/locations}">Orte</a>
+            <a class="nav__link" th:href="@{/sources}">Bezugsquellen</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page" th:attr="data-escape-href=@{/items}">
+    <div class="page__header">
+        <div class="report-title">
+            <h1>Inventarreport</h1>
+            <p class="report-title__date">Erstellt am <span th:text="${page.generatedDate}">29.08.2026</span></p>
+        </div>
+        <div class="page__actions">
+            <a class="button button--primary"
+               th:href="@{/items/report.pdf(name=${param.name},categoryId=${param.categoryId},locationId=${param.locationId},sourceId=${param.sourceId},status=${param.status},sort=${param.sort},direction=${param.direction})}">
+                <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#download"></use></svg>
+                PDF exportieren
+            </a>
+            <a class="button button--secondary" th:href="@{/items}">
+                <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#arrow-left"></use></svg>
+                Zurück zur Liste
+            </a>
+        </div>
+    </div>
+
+    <section class="report-summary" aria-label="Reportkriterien">
+        <div>
+            <p class="muted-text" th:if="${#lists.isEmpty(page.filters)}">Keine Filter gesetzt</p>
+            <dl class="report-filter-list" th:if="${!#lists.isEmpty(page.filters)}">
+                <div th:each="filter : ${page.filters}">
+                    <dt th:text="${filter.label}">Kategorie</dt>
+                    <dd th:text="${filter.value}">Computer &amp; Peripherie</dd>
+                </div>
+            </dl>
+        </div>
+        <div>
+            <dl class="report-totals">
+                <div>
+                    <dt>Summe Mengen</dt>
+                    <dd th:text="${page.totalQuantity}">12</dd>
+                </div>
+                <div>
+                    <dt>Summe Gesamtwerte</dt>
+                    <dd th:text="${page.totalValue}">1.200,00 EUR</dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+
+    <section class="report-list" aria-label="Gegenstände im Report">
+        <article class="report-item" th:each="item : ${page.items}">
+            <div class="report-item__header">
+                <div class="report-item__identity">
+                    <h2 th:text="${item.name}">Laptop</h2>
+                    <div class="report-item__meta">
+                        <p th:text="${item.categoryName}">Computer &amp; Peripherie</p>
+                        <p class="report-item__status" th:if="${item.status != null}" th:text="${item.status}">Schätzwert</p>
+                    </div>
+                </div>
+                <dl class="report-item__values">
+                    <div>
+                        <dt>Menge</dt>
+                        <dd th:text="${item.quantity}">2</dd>
+                    </div>
+                    <div>
+                        <dt>Einzelwert</dt>
+                        <dd th:text="${item.averageValue}">800,00 EUR</dd>
+                    </div>
+                    <div>
+                        <dt>Gesamtwert</dt>
+                        <dd th:text="${item.totalValue}">1.600,00 EUR</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="report-acquisitions">
+                <h3>Zugänge</h3>
+                <p class="muted-text" th:if="${#lists.isEmpty(item.acquisitions)}">Keine Zugänge</p>
+                <table class="data-table data-table--compact" th:if="${!#lists.isEmpty(item.acquisitions)}">
+                    <thead>
+                    <tr>
+                        <th scope="col">Bezugsquelle</th>
+                        <th class="number" scope="col">Menge</th>
+                        <th scope="col">Datum</th>
+                        <th class="number" scope="col">Preis</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="acquisition : ${item.acquisitions}">
+                        <td th:text="${acquisition.sourceName}">Amazon</td>
+                        <td class="number" th:text="${acquisition.quantity}">1</td>
+                        <td th:text="${acquisition.purchaseDate}">03.01.2026</td>
+                        <td class="number" th:text="${acquisition.purchasePrice}">800,00 EUR</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+        <p class="empty report-list__empty" th:if="${#lists.isEmpty(page.items)}">Keine Gegenstände gefunden</p>
+    </section>
+</main>
+</body>
+</html>

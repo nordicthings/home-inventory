@@ -41,7 +41,9 @@ import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import jakarta.servlet.http.HttpServletRequest
 import java.io.Serializable
+import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Controller
@@ -53,6 +55,7 @@ class ItemWebController(
     private val getLocationListUseCase: GetLocationListUseCase,
     private val getSourceListUseCase: GetSourceListUseCase,
     private val acquisitionInvoiceUseCase: AcquisitionInvoiceUseCase,
+    private val itemReportPdfRenderer: ItemReportPdfRenderer,
 ) {
 
     @GetMapping("/", "/items")
@@ -93,6 +96,49 @@ class ItemWebController(
         model.addAttribute("items", page.items)
         model.addAttribute("sort", page.sort)
         return "items/_table :: itemTable"
+    }
+
+    @GetMapping("/items/report")
+    fun itemReport(
+        @RequestParam(name = "name", required = false) name: String?,
+        @RequestParam(name = "categoryId", required = false) categoryId: String?,
+        @RequestParam(name = "locationId", required = false) locationId: String?,
+        @RequestParam(name = "sourceId", required = false) sourceId: String?,
+        @RequestParam(name = "status", required = false) status: String?,
+        @RequestParam(name = "sort", required = false) sort: String?,
+        @RequestParam(name = "direction", required = false) direction: String?,
+        request: HttpServletRequest,
+        model: Model,
+    ): String {
+        val listState = resolveItemListState(name, categoryId, locationId, sourceId, status, sort, direction, request)
+        model.addAttribute("page", createReportPageView(listState))
+        return "items/report"
+    }
+
+    @GetMapping("/items/report.pdf")
+    fun itemReportPdf(
+        @RequestParam(name = "name", required = false) name: String?,
+        @RequestParam(name = "categoryId", required = false) categoryId: String?,
+        @RequestParam(name = "locationId", required = false) locationId: String?,
+        @RequestParam(name = "sourceId", required = false) sourceId: String?,
+        @RequestParam(name = "status", required = false) status: String?,
+        @RequestParam(name = "sort", required = false) sort: String?,
+        @RequestParam(name = "direction", required = false) direction: String?,
+        request: HttpServletRequest,
+    ): ResponseEntity<ByteArray> {
+        val listState = resolveItemListState(name, categoryId, locationId, sourceId, status, sort, direction, request)
+        val content = itemReportPdfRenderer.render(createReportPageView(listState))
+        val fileDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)
+            .header(
+                HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition.attachment()
+                    .filename("Inventurreport_$fileDate.pdf", Charsets.UTF_8)
+                    .build()
+                    .toString(),
+            )
+            .body(content)
     }
 
     @GetMapping("/items/new")
@@ -698,6 +744,31 @@ class ItemWebController(
             items = searchItems(state).map { it.toRowView() },
         )
 
+    private fun createReportPageView(
+        state: ItemListSessionState,
+    ): ItemReportPageView {
+        val entries = searchItems(state)
+        val sourceId = state.sourceId.toSourceIdOrNull()
+        val items = entries.map { entry ->
+            toReportItemView(
+                entry = entry,
+                details = getItemDetailsUseCase.getItemDetails(entry.id),
+                sourceId = sourceId,
+            )
+        }
+        return ItemReportPageView(
+            generatedDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
+            filters = state.toReportFilters(),
+            items = items,
+            totalQuantity = entries.sumOf { it.totalQuantity.value }.formatIntegerForView(),
+            totalValue = formatReportTotalValue(
+                entries.fold(BigDecimal.ZERO) { total, entry ->
+                    total + (entry.totalValue?.amount ?: BigDecimal.ZERO)
+                },
+            ),
+        )
+    }
+
     private fun categoryOptions(): List<SelectOptionView> =
         getCategoryListUseCase.getCategoryList()
             .map { SelectOptionView(it.id.value.toString(), it.name.value) }
@@ -717,6 +788,25 @@ class ItemWebController(
             SelectOptionView("estimatedValue", "Schätzwert"),
             SelectOptionView("withoutStatus", "Ohne Status"),
         )
+
+    private fun ItemListSessionState.toReportFilters(): List<ItemReportFilterView> =
+        buildList {
+            if (name.isNotBlank()) {
+                add(ItemReportFilterView("Suche", name))
+            }
+            categoryOptions().firstOrNull { it.id == categoryId }?.let {
+                add(ItemReportFilterView("Kategorie", it.label))
+            }
+            locationOptions().firstOrNull { it.id == locationId }?.let {
+                add(ItemReportFilterView("Ort", it.label))
+            }
+            sourceOptions().firstOrNull { it.id == sourceId }?.let {
+                add(ItemReportFilterView("Bezugsquelle", it.label))
+            }
+            statusOptions().firstOrNull { it.id == status }?.let {
+                add(ItemReportFilterView("Status", it.label))
+            }
+        }
 
     private fun createCreatePageView(
         form: ItemCreateForm,

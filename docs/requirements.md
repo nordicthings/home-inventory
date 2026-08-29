@@ -403,8 +403,6 @@ Eine vorhandene Rechnung kann gelöscht werden. Vor dem Löschen wird eine Siche
 
 Die Rechnungsaktionen werden platzsparend direkt im Bereich des jeweiligen Zugangs dargestellt. Bei vorhandener Rechnung wird der Dateiname angezeigt; Download, Ersetzen und Löschen werden als kompakte Icon-Aktionen angeboten.
 
-Eine Vorschau der PDF-Rechnung direkt in der Anwendung wird in einem späteren Schritt innerhalb von Version 2 umgesetzt.
-
 ### Stammdaten pflegen
 
 Orte, Bezugsquellen und Kategorien können angelegt, bearbeitet und gelöscht werden.

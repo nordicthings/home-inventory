@@ -26,7 +26,14 @@
 <main class="page page--inventory">
     <div class="page__header">
         <h1>Inventar</h1>
-        <a class="button button--primary" href="/items/new">Gegenstand hinzufügen</a>
+        <div class="page__actions">
+            <a class="button button--secondary"
+               th:href="@{/items/report(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},status=${page.filter.status},sort=${page.sort.field},direction=${page.sort.direction})}">
+                <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#file-text"></use></svg>
+                Report anzeigen
+            </a>
+            <a class="button button--primary" href="/items/new">Gegenstand hinzufügen</a>
+        </div>
     </div>
 
     <section class="toolbar" aria-label="Inventar filtern">

@@ -23,6 +23,7 @@ import java.net.URLEncoder
 import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.random.Random
 import kotlin.test.assertContains
@@ -70,6 +71,8 @@ class ItemWebControllerTest {
         assertEquals(200, response.statusCode())
         assertContains(response.body(), "<h1>Inventar</h1>")
         assertContains(response.body(), "Gegenstand hinzufügen")
+        assertContains(response.body(), "Report anzeigen")
+        assertContains(response.body(), """href="/items/report""")
         assertContains(response.body(), "Alle Kategorien")
         assertContains(response.body(), "Computer &amp; Peripherie")
         assertContains(response.body(), "Alle Orte")
@@ -149,6 +152,78 @@ class ItemWebControllerTest {
         assertContains(response.body(), "$prefix Offen")
         assertFalse(response.body().contains("$prefix Erledigt"))
         assertContains(response.body(), "status=reviewRequired")
+    }
+
+    @Test
+    fun `renders report for current item list filters`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val kitchen = assertNotNull(locationRepository.findByNormalizedName("küche"))
+        val amazon = assertNotNull(sourceRepository.findByNormalizedName("amazon"))
+        val saturn = assertNotNull(sourceRepository.findByNormalizedName("saturn"))
+        val prefix = "Report-${Random.nextInt(100000, 999999)}"
+        val item = itemUseCase.createItem(
+            name = ItemName.of("$prefix Laptop"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("100"),
+            note = "",
+            reviewRequired = true,
+        )
+        itemUseCase.setLocationQuantity(item.id, kitchen.id, Quantity.of(3))
+        itemUseCase.recordAcquisition(item.id, amazon.id, Quantity.of(2), MonetaryValue.of("100"), LocalDate.of(2026, 1, 3))
+        itemUseCase.recordAcquisition(item.id, saturn.id, Quantity.of(1), MonetaryValue.of("100"), LocalDate.of(2026, 1, 4))
+
+        val response = get("/items/report?name=${prefix.urlEncode()}&sourceId=${amazon.id.value}")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "<h1>Inventarreport</h1>")
+        assertContains(response.body(), "Erstellt am")
+        assertContains(response.body(), LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")))
+        assertContains(response.body(), "PDF exportieren")
+        assertContains(response.body(), """href="/items/report.pdf""")
+        assertContains(response.body(), """/js/escape-navigation.js""")
+        assertContains(response.body(), """data-escape-href="/items""")
+        assertContains(response.body(), "<dt>Suche</dt>")
+        assertContains(response.body(), prefix)
+        assertContains(response.body(), "<dt>Bezugsquelle</dt>")
+        assertContains(response.body(), "Amazon")
+        assertContains(response.body(), "$prefix Laptop")
+        assertContains(response.body(), "Zu prüfen")
+        assertContains(response.body(), "<dt>Menge</dt>")
+        assertContains(response.body(), "300,00 EUR")
+        assertContains(response.body(), "03.01.2026")
+        assertFalse(response.body().contains("Saturn"))
+        assertContains(response.body(), "<dt>Summe Mengen</dt>")
+        assertContains(response.body(), "<dd>3</dd>")
+        assertContains(response.body(), "<dt>Summe Gesamtwerte</dt>")
+
+        val pdfResponse = getBytes("/items/report.pdf?name=${prefix.urlEncode()}&sourceId=${amazon.id.value}")
+
+        assertEquals(200, pdfResponse.statusCode())
+        assertEquals("application/pdf", pdfResponse.headers().firstValue("content-type").orElseThrow())
+        assertContains(pdfResponse.headers().firstValue("content-disposition").orElseThrow(), "attachment")
+        assertContains(
+            pdfResponse.headers().firstValue("content-disposition").orElseThrow(),
+            "Inventurreport_${LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)}.pdf",
+        )
+        assertContentEquals("%PDF-".toByteArray(), pdfResponse.body().take(5).toByteArray())
+    }
+
+    @Test
+    fun `does not render empty item status in report`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val prefix = "Report-Without-Status-${Random.nextInt(100000, 999999)}"
+        itemUseCase.createItem(
+            name = ItemName.of("$prefix Kabel"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.unknown(),
+            note = "",
+        )
+
+        val response = get("/items/report?name=${prefix.urlEncode()}")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), "$prefix Kabel")
+        assertFalse(response.body().contains("Ohne Status"))
     }
 
     @Test
