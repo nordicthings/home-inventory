@@ -9,6 +9,7 @@
     <link rel="alternate icon" th:href="@{/favicon.ico}">
     <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
     <script defer th:src="@{/js/inventory-list-sticky.js}"></script>
+    <script defer th:src="@{/js/inventory-list-scroll.js}"></script>
 </head>
 <body>
 <header class="topbar">
@@ -40,7 +41,7 @@
         <div th:replace="~{items/_filters :: itemFilters}"></div>
     </section>
 
-    <section class="table-section" aria-label="Gegenstände">
+    <section class="table-section" data-inventory-scroll-container aria-label="Gegenstände">
         <div id="item-table" th:replace="~{items/_table :: itemTable}"></div>
     </section>
 </main>

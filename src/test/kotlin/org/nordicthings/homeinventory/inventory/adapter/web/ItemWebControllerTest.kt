@@ -72,6 +72,8 @@ class ItemWebControllerTest {
 
         assertEquals(200, response.statusCode())
         assertContains(response.body(), "<h1>Inventar</h1>")
+        assertContains(response.body(), """/js/inventory-list-scroll.js""")
+        assertContains(response.body(), """data-inventory-scroll-container""")
         assertContains(response.body(), "Gegenstand hinzufügen")
         assertContains(response.body(), "Report anzeigen")
         assertContains(response.body(), """href="/items/report""")
@@ -152,6 +154,7 @@ class ItemWebControllerTest {
         assertContains(response.body(), """<option value="reviewRequired"""")
         assertContains(response.body(), """selected="selected">Zu prüfen</option>""")
         assertContains(response.body(), "$prefix Offen")
+        assertContains(response.body(), """data-restore-list-scroll="true"""")
         assertFalse(response.body().contains("$prefix Erledigt"))
         assertContains(response.body(), "status=reviewRequired")
     }

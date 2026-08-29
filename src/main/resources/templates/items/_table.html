@@ -51,7 +51,10 @@
         <tbody>
         <tr th:each="item : ${items}">
             <td>
-                <a class="table-link" th:href="@{/items/{id}(id=${item.id})}" th:text="${item.name}">Laptop</a>
+                <a class="table-link"
+                   data-restore-list-scroll="true"
+                   th:href="@{/items/{id}(id=${item.id})}"
+                   th:text="${item.name}">Laptop</a>
             </td>
             <td th:text="${item.categoryName}">Computer &amp; Peripherie</td>
             <td class="number" th:text="${item.totalQuantity}">2</td>

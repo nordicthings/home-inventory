@@ -40,5 +40,5 @@ out/
 !gradle/wrapper/gradle-wrapper.jar
 
 # Local environment
-.env
+*.env
 .local/
