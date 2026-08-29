@@ -92,10 +92,9 @@
                 </dl>
             </div>
 
-            <div class="report-acquisitions">
+            <div class="report-acquisitions" th:if="${!#lists.isEmpty(item.acquisitions)}">
                 <h3>Zugänge</h3>
-                <p class="muted-text" th:if="${#lists.isEmpty(item.acquisitions)}">Keine Zugänge</p>
-                <table class="data-table data-table--compact" th:if="${!#lists.isEmpty(item.acquisitions)}">
+                <table class="data-table data-table--compact">
                     <thead>
                     <tr>
                         <th scope="col">Bezugsquelle</th>

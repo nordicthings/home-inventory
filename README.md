@@ -81,7 +81,17 @@ Um es auf das NAS zu bringen, muss es aus der lokalen Registry exportiert werden
 
 Das erzeugt zusätzlich die Datei `home-inventory-1.1.0.tar`. Mit `--export-dir <zielordner>` kann ein anderer Zielordner gewählt werden.
 
-Das Image kann nun auf dem NAS geladen werden.
+Das Image kann nun auf dem NAS geladen werden. Dazu sind folgende Schritte notwendig: 
+
+1. Mit einem Administrations-User am NAs anmelden.
+2. Die Anwendung `Container-Manager` starten.
+3. Den Abschnitt `Image` auswählen.
+4. Über `Aktion` -> `Importieren` das neue Image hochladen.
+5. Den Abschnitt `Container` auswählen und den alten Container über `Aktion` -> `Stopp` anhalten.
+6. Den Abschnitt `Projekt` auswählen und das Projekt `home-inventory` öffnen.
+7. Im Reiter `YAML-Konfiguration` das neue Image eintragen und mit `Speichern` bestätigen. Im Folgedialog "Projekt erstellen und neu starten" wählen.
+8. Optional: Im Abschnitt `Image` das alte Imge entfernen.
+
 
 ### Container lokal starten:
 Sofern der Container für die lokale Host-Architektur passt, kann man ihn gegen eine vorhandene MariaDB starten. 

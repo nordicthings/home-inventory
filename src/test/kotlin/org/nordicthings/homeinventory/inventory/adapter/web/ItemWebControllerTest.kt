@@ -1,6 +1,8 @@
 package org.nordicthings.homeinventory.inventory.adapter.web
 
 import org.junit.jupiter.api.Test
+import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.text.PDFTextStripper
 import org.nordicthings.homeinventory.HomeInventoryApplication
 import org.nordicthings.homeinventory.inventory.application.ItemSearchCriteria
 import org.nordicthings.homeinventory.inventory.application.port.inbound.ItemUseCase
@@ -206,6 +208,9 @@ class ItemWebControllerTest {
             "Inventurreport_${LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)}.pdf",
         )
         assertContentEquals("%PDF-".toByteArray(), pdfResponse.body().take(5).toByteArray())
+        PDDocument.load(pdfResponse.body()).use { document ->
+            assertContains(PDFTextStripper().getText(document), "Seite 1 / 1")
+        }
     }
 
     @Test
@@ -224,6 +229,8 @@ class ItemWebControllerTest {
         assertEquals(200, response.statusCode())
         assertContains(response.body(), "$prefix Kabel")
         assertFalse(response.body().contains("Ohne Status"))
+        assertFalse(response.body().contains("Keine Zugänge"))
+        assertFalse(response.body().contains("report-acquisitions"))
     }
 
     @Test
