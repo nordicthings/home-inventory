@@ -28,6 +28,7 @@ import kotlin.random.Random
 import kotlin.test.assertContains
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 
 @SpringBootTest(
@@ -75,6 +76,11 @@ class ItemWebControllerTest {
         assertContains(response.body(), "Küche")
         assertContains(response.body(), "Alle Bezugsquellen")
         assertContains(response.body(), "Amazon")
+        assertContains(response.body(), "Alle Status")
+        assertContains(response.body(), "Zu prüfen")
+        assertContains(response.body(), "Rechnung liegt vor")
+        assertContains(response.body(), "Schätzwert")
+        assertContains(response.body(), "Ohne Status")
     }
 
     @Test
@@ -100,7 +106,7 @@ class ItemWebControllerTest {
 
     @Test
     fun `restores item list filters and sorting from session`() {
-        val filteredResponse = get("/items?name=Session-Laptop&sort=category&direction=desc")
+        val filteredResponse = get("/items?name=Session-Laptop&status=reviewRequired&sort=category&direction=desc")
         val sessionCookie = filteredResponse.headers()
             .allValues("Set-Cookie")
             .first()
@@ -110,9 +116,39 @@ class ItemWebControllerTest {
 
         assertEquals(200, restoredResponse.statusCode())
         assertContains(restoredResponse.body(), """<input id="name" name="name" type="search" autocomplete="off" value="Session-Laptop">""")
+        assertContains(restoredResponse.body(), """<option value="reviewRequired"""")
+        assertContains(restoredResponse.body(), """selected="selected">Zu prüfen</option>""")
         assertContains(restoredResponse.body(), """<input type="hidden" name="sort" value="category">""")
         assertContains(restoredResponse.body(), """<input type="hidden" name="direction" value="desc">""")
         assertContains(restoredResponse.body(), "absteigend")
+    }
+
+    @Test
+    fun `filters item list by status`() {
+        val category = assertNotNull(categoryRepository.findByNormalizedName("computer & peripherie"))
+        val prefix = "Status-Filter-${Random.nextInt(100000, 999999)}"
+        itemUseCase.createItem(
+            name = ItemName.of("$prefix Offen"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("100"),
+            note = "",
+            reviewRequired = true,
+        )
+        itemUseCase.createItem(
+            name = ItemName.of("$prefix Erledigt"),
+            categoryId = category.id,
+            estimatedValue = MonetaryValue.of("100"),
+            note = "",
+        )
+
+        val response = get("/items?name=${prefix.urlEncode()}&status=reviewRequired")
+
+        assertEquals(200, response.statusCode())
+        assertContains(response.body(), """<option value="reviewRequired"""")
+        assertContains(response.body(), """selected="selected">Zu prüfen</option>""")
+        assertContains(response.body(), "$prefix Offen")
+        assertFalse(response.body().contains("$prefix Erledigt"))
+        assertContains(response.body(), "status=reviewRequired")
     }
 
     @Test

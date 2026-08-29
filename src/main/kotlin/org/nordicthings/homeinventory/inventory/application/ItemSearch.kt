@@ -14,6 +14,7 @@ data class SearchItemsFilter(
     val categoryId: CategoryId? = null,
     val locationId: LocationId? = null,
     val sourceId: SourceId? = null,
+    val status: ItemStatusFilter? = null,
     val sort: ItemListSort = ItemListSort(),
 )
 
@@ -53,4 +54,11 @@ enum class ItemListSortField {
 enum class SortDirection {
     ASCENDING,
     DESCENDING,
+}
+
+enum class ItemStatusFilter {
+    REVIEW_REQUIRED,
+    HAS_INVOICE,
+    ESTIMATED_VALUE,
+    WITHOUT_STATUS,
 }

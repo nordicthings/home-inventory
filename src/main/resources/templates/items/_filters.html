@@ -44,6 +44,17 @@
         </select>
     </div>
 
+    <div class="field">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            <option value="" th:selected="${page.filter.status == ''}">Alle Status</option>
+            <option th:each="status : ${page.statuses}"
+                    th:value="${status.id}"
+                    th:text="${status.label}"
+                    th:selected="${status.id == page.filter.status}"></option>
+        </select>
+    </div>
+
     <div class="field field--actions">
         <button class="button button--secondary" type="submit">Filtern</button>
     </div>

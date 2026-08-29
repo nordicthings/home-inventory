@@ -26,7 +26,10 @@
 <main class="page page--sticky-list">
     <div class="page__header">
         <h1>Bezugsquellen</h1>
-        <a class="button button--primary" th:href="@{/sources/new}">Bezugsquelle hinzufügen</a>
+        <a class="button button--primary" th:href="@{/sources/new}">
+            <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#plus"></use></svg>
+            Bezugsquelle hinzufügen
+        </a>
     </div>
 
     <div class="form__errors" th:if="${!#lists.isEmpty(page.errors)}">
@@ -49,8 +52,18 @@
                     <td th:text="${source.details}">Online</td>
                     <td>
                         <div class="row-actions">
-                            <a class="table-link" th:href="@{/sources/{id}/edit(id=${source.id})}">Ändern</a>
-                            <a class="table-link table-link--danger" th:href="@{/sources/{id}/delete(id=${source.id})}">Löschen</a>
+                            <a class="button button--secondary button--small button--icon"
+                               th:href="@{/sources/{id}/edit(id=${source.id})}"
+                               title="Bezugsquelle ändern"
+                               aria-label="Bezugsquelle ändern">
+                                <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#pencil"></use></svg>
+                            </a>
+                            <a class="button button--danger button--small button--icon"
+                               th:href="@{/sources/{id}/delete(id=${source.id})}"
+                               title="Bezugsquelle löschen"
+                               aria-label="Bezugsquelle löschen">
+                                <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#trash-2"></use></svg>
+                            </a>
                         </div>
                     </td>
                 </tr>

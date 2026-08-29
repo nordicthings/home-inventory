@@ -6,6 +6,7 @@ import org.nordicthings.homeinventory.inventory.application.EntityNotFoundExcept
 import org.nordicthings.homeinventory.inventory.application.InvalidAcquisitionInvoiceException
 import org.nordicthings.homeinventory.inventory.application.ItemListSort
 import org.nordicthings.homeinventory.inventory.application.ItemListSortField
+import org.nordicthings.homeinventory.inventory.application.ItemStatusFilter
 import org.nordicthings.homeinventory.inventory.application.SearchItemsFilter
 import org.nordicthings.homeinventory.inventory.application.SortDirection
 import org.nordicthings.homeinventory.inventory.application.port.inbound.AcquisitionInvoiceUseCase
@@ -60,12 +61,13 @@ class ItemWebController(
         @RequestParam(name = "categoryId", required = false) categoryId: String?,
         @RequestParam(name = "locationId", required = false) locationId: String?,
         @RequestParam(name = "sourceId", required = false) sourceId: String?,
+        @RequestParam(name = "status", required = false) status: String?,
         @RequestParam(name = "sort", required = false) sort: String?,
         @RequestParam(name = "direction", required = false) direction: String?,
         request: HttpServletRequest,
         model: Model,
     ): String {
-        val listState = resolveItemListState(name, categoryId, locationId, sourceId, sort, direction, request)
+        val listState = resolveItemListState(name, categoryId, locationId, sourceId, status, sort, direction, request)
         val page = createPageView(listState)
         model.addAttribute("page", page)
         model.addAttribute("items", page.items)
@@ -79,12 +81,13 @@ class ItemWebController(
         @RequestParam(name = "categoryId", required = false) categoryId: String?,
         @RequestParam(name = "locationId", required = false) locationId: String?,
         @RequestParam(name = "sourceId", required = false) sourceId: String?,
+        @RequestParam(name = "status", required = false) status: String?,
         @RequestParam(name = "sort", required = false) sort: String?,
         @RequestParam(name = "direction", required = false) direction: String?,
         request: HttpServletRequest,
         model: Model,
     ): String {
-        val listState = resolveItemListState(name, categoryId, locationId, sourceId, sort, direction, request)
+        val listState = resolveItemListState(name, categoryId, locationId, sourceId, status, sort, direction, request)
         val page = createPageView(listState)
         model.addAttribute("page", page)
         model.addAttribute("items", page.items)
@@ -632,6 +635,7 @@ class ItemWebController(
                 categoryId = state.categoryId,
                 locationId = state.locationId,
                 sourceId = state.sourceId,
+                status = state.status,
             ),
             sort = ItemSortView(
                 field = state.sort.toItemSortField().requestValue,
@@ -639,6 +643,7 @@ class ItemWebController(
             ),
             categories = getCategoryListUseCase.getCategoryList()
                 .map { SelectOptionView(it.id.value.toString(), it.name.value) },
+            statuses = statusOptions(),
             locations = getLocationListUseCase.getLocationList()
                 .map { SelectOptionView(it.id.value.toString(), it.name.value) },
             sources = getSourceListUseCase.getSourceList()
@@ -657,6 +662,14 @@ class ItemWebController(
     private fun sourceOptions(): List<SelectOptionView> =
         getSourceListUseCase.getSourceList()
             .map { SelectOptionView(it.id.value.toString(), it.name.value) }
+
+    private fun statusOptions(): List<SelectOptionView> =
+        listOf(
+            SelectOptionView("reviewRequired", "Zu prüfen"),
+            SelectOptionView("invoice", "Rechnung liegt vor"),
+            SelectOptionView("estimatedValue", "Schätzwert"),
+            SelectOptionView("withoutStatus", "Ohne Status"),
+        )
 
     private fun createCreatePageView(
         form: ItemCreateForm,
@@ -972,6 +985,7 @@ class ItemWebController(
                 categoryId = state.categoryId.toCategoryIdOrNull(),
                 locationId = state.locationId.toLocationIdOrNull(),
                 sourceId = state.sourceId.toSourceIdOrNull(),
+                status = state.status.toItemStatusFilterOrNull(),
                 sort = ItemListSort(
                     field = state.sort.toItemSortField(),
                     direction = state.direction.toSortDirection(),
@@ -987,6 +1001,7 @@ class ItemWebController(
         categoryId: String?,
         locationId: String?,
         sourceId: String?,
+        status: String?,
         sort: String?,
         direction: String?,
         request: HttpServletRequest,
@@ -1001,6 +1016,7 @@ class ItemWebController(
             categoryId = categoryId.orEmpty(),
             locationId = locationId.orEmpty(),
             sourceId = sourceId.orEmpty(),
+            status = status.toItemStatusFilterOrNull()?.requestValue.orEmpty(),
             sort = sort.toItemSortField().requestValue,
             direction = direction.toSortDirection().requestValue,
         )
@@ -1023,6 +1039,15 @@ class ItemWebController(
             else -> SortDirection.ASCENDING
         }
 
+    private fun String?.toItemStatusFilterOrNull(): ItemStatusFilter? =
+        when (this) {
+            "reviewRequired" -> ItemStatusFilter.REVIEW_REQUIRED
+            "invoice" -> ItemStatusFilter.HAS_INVOICE
+            "estimatedValue" -> ItemStatusFilter.ESTIMATED_VALUE
+            "withoutStatus" -> ItemStatusFilter.WITHOUT_STATUS
+            else -> null
+        }
+
     private val ItemListSortField.requestValue: String
         get() = when (this) {
             ItemListSortField.NAME -> "name"
@@ -1036,6 +1061,14 @@ class ItemWebController(
         get() = when (this) {
             SortDirection.ASCENDING -> "asc"
             SortDirection.DESCENDING -> "desc"
+        }
+
+    private val ItemStatusFilter.requestValue: String
+        get() = when (this) {
+            ItemStatusFilter.REVIEW_REQUIRED -> "reviewRequired"
+            ItemStatusFilter.HAS_INVOICE -> "invoice"
+            ItemStatusFilter.ESTIMATED_VALUE -> "estimatedValue"
+            ItemStatusFilter.WITHOUT_STATUS -> "withoutStatus"
         }
 
     private fun String?.toNoticeList(): List<String> =
@@ -1090,6 +1123,7 @@ private data class ItemListSessionState(
     val categoryId: String = "",
     val locationId: String = "",
     val sourceId: String = "",
+    val status: String = "",
     val sort: String = "name",
     val direction: String = "asc",
 ) : Serializable

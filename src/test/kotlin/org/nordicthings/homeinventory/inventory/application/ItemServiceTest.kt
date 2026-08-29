@@ -131,6 +131,57 @@ class ItemServiceTest {
     }
 
     @Test
+    fun `filters searched items by displayed status`() {
+        val categoryId = CategoryId.newId()
+        val result = listOf(
+            itemListEntry(
+                name = "Recherche",
+                categoryId = categoryId,
+                totalValue = MonetaryValue.of("100"),
+                estimatedValue = MonetaryValue.of("100"),
+                reviewRequired = true,
+                hasInvoice = true,
+            ),
+            itemListEntry(
+                name = "Rechnung",
+                categoryId = categoryId,
+                totalValue = MonetaryValue.of("200"),
+                estimatedValue = MonetaryValue.of("200"),
+                hasInvoice = true,
+            ),
+            itemListEntry(
+                name = "Schaetzung",
+                categoryId = categoryId,
+                totalValue = MonetaryValue.of("300"),
+                estimatedValue = MonetaryValue.of("300"),
+            ),
+            itemListEntry(
+                name = "Unbekannt",
+                categoryId = categoryId,
+                totalValue = null,
+            ),
+        )
+        every { itemRepository.search(ItemSearchCriteria()) } returns result
+
+        assertEquals(
+            listOf("Recherche"),
+            service.searchItems(SearchItemsFilter(status = ItemStatusFilter.REVIEW_REQUIRED)).map { it.name.value },
+        )
+        assertEquals(
+            listOf("Rechnung"),
+            service.searchItems(SearchItemsFilter(status = ItemStatusFilter.HAS_INVOICE)).map { it.name.value },
+        )
+        assertEquals(
+            listOf("Schaetzung"),
+            service.searchItems(SearchItemsFilter(status = ItemStatusFilter.ESTIMATED_VALUE)).map { it.name.value },
+        )
+        assertEquals(
+            listOf("Unbekannt"),
+            service.searchItems(SearchItemsFilter(status = ItemStatusFilter.WITHOUT_STATUS)).map { it.name.value },
+        )
+    }
+
+    @Test
     fun `sorts searched items by total value descending with unknown values last`() {
         val categoryId = CategoryId.newId()
         val result = listOf(
@@ -470,6 +521,9 @@ class ItemServiceTest {
         name: String,
         categoryId: CategoryId,
         totalValue: MonetaryValue?,
+        estimatedValue: MonetaryValue = MonetaryValue.unknown(),
+        reviewRequired: Boolean = false,
+        hasInvoice: Boolean = false,
     ): ItemListEntry =
         ItemListEntry(
             id = ItemId.newId(),
@@ -477,9 +531,9 @@ class ItemServiceTest {
             categoryId = categoryId,
             categoryName = CategoryName.of("Computer & Peripherie"),
             totalQuantity = Quantity.ZERO,
-            estimatedValue = MonetaryValue.unknown(),
-            reviewRequired = false,
-            hasInvoice = false,
+            estimatedValue = estimatedValue,
+            reviewRequired = reviewRequired,
+            hasInvoice = hasInvoice,
             averageValue = totalValue,
             totalValue = totalValue,
         )

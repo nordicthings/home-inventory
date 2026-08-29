@@ -69,7 +69,9 @@ class ItemService(
                 locationId = filter.locationId,
                 sourceId = filter.sourceId,
             ),
-        ).sortedBy(filter.sort)
+        )
+            .filterBy(filter.status)
+            .sortedBy(filter.sort)
 
     override fun createItem(
         name: ItemName,
@@ -279,6 +281,19 @@ private fun List<ItemListEntry>.sortedBy(sort: ItemListSort): List<ItemListEntry
         }
     }
 }
+
+private fun List<ItemListEntry>.filterBy(status: ItemStatusFilter?): List<ItemListEntry> =
+    status?.let { expectedStatus ->
+        filter { it.displayedStatus == expectedStatus }
+    } ?: this
+
+private val ItemListEntry.displayedStatus: ItemStatusFilter?
+    get() = when {
+        reviewRequired -> ItemStatusFilter.REVIEW_REQUIRED
+        hasInvoice -> ItemStatusFilter.HAS_INVOICE
+        estimatedValue.isKnown -> ItemStatusFilter.ESTIMATED_VALUE
+        else -> ItemStatusFilter.WITHOUT_STATUS
+    }
 
 private fun compareKnownMoney(left: BigDecimal?, right: BigDecimal?, direction: SortDirection): Int =
     when {

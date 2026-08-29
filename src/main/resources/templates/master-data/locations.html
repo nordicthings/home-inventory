@@ -26,7 +26,10 @@
 <main class="page page--sticky-list">
     <div class="page__header">
         <h1>Orte</h1>
-        <a class="button button--primary" th:href="@{/locations/new}">Ort hinzufügen</a>
+        <a class="button button--primary" th:href="@{/locations/new}">
+            <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#plus"></use></svg>
+            Ort hinzufügen
+        </a>
     </div>
 
     <div class="form__errors" th:if="${!#lists.isEmpty(page.errors)}">
@@ -49,8 +52,18 @@
                     <td th:text="${location.type}">intern</td>
                     <td>
                         <div class="row-actions">
-                            <a class="table-link" th:href="@{/locations/{id}/edit(id=${location.id})}">Ändern</a>
-                            <a class="table-link table-link--danger" th:href="@{/locations/{id}/delete(id=${location.id})}">Löschen</a>
+                            <a class="button button--secondary button--small button--icon"
+                               th:href="@{/locations/{id}/edit(id=${location.id})}"
+                               title="Ort ändern"
+                               aria-label="Ort ändern">
+                                <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#pencil"></use></svg>
+                            </a>
+                            <a class="button button--danger button--small button--icon"
+                               th:href="@{/locations/{id}/delete(id=${location.id})}"
+                               title="Ort löschen"
+                               aria-label="Ort löschen">
+                                <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#trash-2"></use></svg>
+                            </a>
                         </div>
                     </td>
                 </tr>

@@ -10,6 +10,7 @@ import java.util.Locale
 data class ItemListPageView(
     val filter: ItemFilterView,
     val sort: ItemSortView,
+    val statuses: List<SelectOptionView>,
     val categories: List<SelectOptionView>,
     val locations: List<SelectOptionView>,
     val sources: List<SelectOptionView>,
@@ -21,6 +22,7 @@ data class ItemFilterView(
     val categoryId: String = "",
     val locationId: String = "",
     val sourceId: String = "",
+    val status: String = "",
 )
 
 data class ItemSortView(

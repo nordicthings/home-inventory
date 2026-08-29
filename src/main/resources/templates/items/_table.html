@@ -8,7 +8,7 @@
             <th scope="col">
                 <a class="sort-link"
                    th:classappend="${page.sort.field == 'name'} ? ' sort-link--active'"
-                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},sort='name',direction=${page.sort.nextDirectionFor('name')})}">
+                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},status=${page.filter.status},sort='name',direction=${page.sort.nextDirectionFor('name')})}">
                     Name
                     <span class="sort-link__indicator" th:text="${page.sort.indicatorFor('name')}"></span>
                 </a>
@@ -16,7 +16,7 @@
             <th scope="col">
                 <a class="sort-link"
                    th:classappend="${page.sort.field == 'category'} ? ' sort-link--active'"
-                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},sort='category',direction=${page.sort.nextDirectionFor('category')})}">
+                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},status=${page.filter.status},sort='category',direction=${page.sort.nextDirectionFor('category')})}">
                     Kategorie
                     <span class="sort-link__indicator" th:text="${page.sort.indicatorFor('category')}"></span>
                 </a>
@@ -24,7 +24,7 @@
             <th class="number" scope="col">
                 <a class="sort-link sort-link--number"
                    th:classappend="${page.sort.field == 'quantity'} ? ' sort-link--active'"
-                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},sort='quantity',direction=${page.sort.nextDirectionFor('quantity')})}">
+                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},status=${page.filter.status},sort='quantity',direction=${page.sort.nextDirectionFor('quantity')})}">
                     Menge
                     <span class="sort-link__indicator" th:text="${page.sort.indicatorFor('quantity')}"></span>
                 </a>
@@ -33,7 +33,7 @@
             <th class="number" scope="col">
                 <a class="sort-link sort-link--number"
                    th:classappend="${page.sort.field == 'averageValue'} ? ' sort-link--active'"
-                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},sort='averageValue',direction=${page.sort.nextDirectionFor('averageValue')})}">
+                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},status=${page.filter.status},sort='averageValue',direction=${page.sort.nextDirectionFor('averageValue')})}">
                     Wert
                     <span class="sort-link__indicator" th:text="${page.sort.indicatorFor('averageValue')}"></span>
                 </a>
@@ -41,7 +41,7 @@
             <th class="number" scope="col">
                 <a class="sort-link sort-link--number"
                    th:classappend="${page.sort.field == 'totalValue'} ? ' sort-link--active'"
-                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},sort='totalValue',direction=${page.sort.nextDirectionFor('totalValue')})}">
+                   th:href="@{/items(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},status=${page.filter.status},sort='totalValue',direction=${page.sort.nextDirectionFor('totalValue')})}">
                     Gesamt
                     <span class="sort-link__indicator" th:text="${page.sort.indicatorFor('totalValue')}"></span>
                 </a>

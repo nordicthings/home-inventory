@@ -61,6 +61,9 @@ class MasterDataWebControllerTest {
         assertContains(listResponse.body(), """class="page page--sticky-list"""")
         assertContains(listResponse.body(), """src="/js/inventory-list-sticky.js"""")
         assertContains(listResponse.body(), "Kategorie hinzufügen")
+        assertContains(listResponse.body(), """href="/icons/lucide.svg#plus"""")
+        assertContains(listResponse.body(), """aria-label="Kategorie ändern"""")
+        assertContains(listResponse.body(), """aria-label="Kategorie löschen"""")
         assertContains(listResponse.body(), "Computer &amp; Peripherie")
 
         val createForm = get("/categories/new")
@@ -121,6 +124,9 @@ class MasterDataWebControllerTest {
         assertContains(listResponse.body(), """class="page page--sticky-list"""")
         assertContains(listResponse.body(), """src="/js/inventory-list-sticky.js"""")
         assertContains(listResponse.body(), "Ort hinzufügen")
+        assertContains(listResponse.body(), """href="/icons/lucide.svg#plus"""")
+        assertContains(listResponse.body(), """aria-label="Ort ändern"""")
+        assertContains(listResponse.body(), """aria-label="Ort löschen"""")
         assertContains(listResponse.body(), "Küche")
 
         val createResponse = post("/locations", mapOf("name" to "Garage", "type" to "EXTERNAL"))
@@ -180,6 +186,9 @@ class MasterDataWebControllerTest {
         assertContains(listResponse.body(), """class="page page--sticky-list"""")
         assertContains(listResponse.body(), """src="/js/inventory-list-sticky.js"""")
         assertContains(listResponse.body(), "Bezugsquelle hinzufügen")
+        assertContains(listResponse.body(), """href="/icons/lucide.svg#plus"""")
+        assertContains(listResponse.body(), """aria-label="Bezugsquelle ändern"""")
+        assertContains(listResponse.body(), """aria-label="Bezugsquelle löschen"""")
         assertContains(listResponse.body(), "Amazon")
 
         val createResponse = post("/sources", mapOf("name" to "Flohmarkt", "details" to "Samstag"))

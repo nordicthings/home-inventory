@@ -26,7 +26,10 @@
 <main class="page page--sticky-list">
     <div class="page__header">
         <h1>Kategorien</h1>
-        <a class="button button--primary" th:href="@{/categories/new}">Kategorie hinzufügen</a>
+        <a class="button button--primary" th:href="@{/categories/new}">
+            <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#plus"></use></svg>
+            Kategorie hinzufügen
+        </a>
     </div>
 
     <div class="form__errors" th:if="${!#lists.isEmpty(page.errors)}">
@@ -47,8 +50,18 @@
                     <td th:text="${category.name}">Möbel</td>
                     <td>
                         <div class="row-actions">
-                            <a class="table-link" th:href="@{/categories/{id}/edit(id=${category.id})}">Ändern</a>
-                            <a class="table-link table-link--danger" th:href="@{/categories/{id}/delete(id=${category.id})}">Löschen</a>
+                            <a class="button button--secondary button--small button--icon"
+                               th:href="@{/categories/{id}/edit(id=${category.id})}"
+                               title="Kategorie ändern"
+                               aria-label="Kategorie ändern">
+                                <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#pencil"></use></svg>
+                            </a>
+                            <a class="button button--danger button--small button--icon"
+                               th:href="@{/categories/{id}/delete(id=${category.id})}"
+                               title="Kategorie löschen"
+                               aria-label="Kategorie löschen">
+                                <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#trash-2"></use></svg>
+                            </a>
                         </div>
                     </td>
                 </tr>
