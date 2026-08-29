@@ -170,10 +170,10 @@
                             <div class="row-actions row-actions--compact">
                                 <a class="button button--secondary button--small button--icon"
                                    th:if="${acquisition.invoiceFilename != null}"
-                                   th:href="@{/items/{id}/acquisitions/{acquisitionId}/invoice/download(id=${page.id},acquisitionId=${acquisition.id})}"
-                                   title="Rechnung herunterladen"
-                                   aria-label="Rechnung herunterladen">
-                                    <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#download"></use></svg>
+                                   th:href="@{/items/{id}/acquisitions/{acquisitionId}/invoice/preview(id=${page.id},acquisitionId=${acquisition.id})}"
+                                   title="Rechnung anzeigen"
+                                   aria-label="Rechnung anzeigen">
+                                    <svg class="icon" aria-hidden="true"><use href="/icons/lucide.svg#eye"></use></svg>
                                 </a>
                                 <a class="button button--secondary button--small button--icon"
                                    th:href="@{/items/{id}/acquisitions/{acquisitionId}/invoice/upload(id=${page.id},acquisitionId=${acquisition.id})}"

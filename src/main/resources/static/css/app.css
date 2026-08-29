@@ -212,7 +212,7 @@ h2 {
 
 .filters {
     display: grid;
-    grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(180px, 1fr)) auto;
+    grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(150px, 1fr)) auto;
     gap: 14px;
     align-items: end;
 }
@@ -429,6 +429,26 @@ h2 {
     margin: 0;
     font-weight: 600;
     overflow-wrap: anywhere;
+}
+
+.pdf-preview {
+    min-height: min(72vh, 900px);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.pdf-preview__viewer {
+    display: block;
+    width: 100%;
+    min-height: min(72vh, 900px);
+    border: 0;
+}
+
+.pdf-preview__viewer p {
+    margin: 0;
+    padding: 24px;
 }
 
 .detail-summary,

@@ -20,3 +20,10 @@ data class AcquisitionInvoiceDeletePageView(
     val itemName: String,
     val filename: String,
 )
+
+data class AcquisitionInvoicePreviewPageView(
+    val itemId: String,
+    val acquisitionId: String,
+    val itemName: String,
+    val filename: String,
+)

@@ -322,6 +322,53 @@ class ItemWebController(
             throw invoiceNotFoundResponse(exception)
         }
 
+    @GetMapping("/items/{id}/acquisitions/{acquisitionId}/invoice/preview")
+    fun previewAcquisitionInvoice(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+        model: Model,
+    ): String =
+        try {
+            val details = getItemDetailsUseCase.getItemDetails(ItemId(id))
+            val acquisition = details.acquisitions.firstOrNull { it.id.value == acquisitionId }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Zugang wurde nicht gefunden.")
+            val invoice = acquisition.invoice
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Rechnung wurde nicht gefunden.")
+            model.addAttribute(
+                "page",
+                AcquisitionInvoicePreviewPageView(
+                    itemId = details.id.value.toString(),
+                    acquisitionId = acquisition.id.value.toString(),
+                    itemName = details.name.value,
+                    filename = invoice.originalFilename.value,
+                ),
+            )
+            "items/invoice-preview"
+        } catch (exception: EntityNotFoundException) {
+            throw invoiceNotFoundResponse(exception)
+        }
+
+    @GetMapping("/items/{id}/acquisitions/{acquisitionId}/invoice/preview/content")
+    fun previewAcquisitionInvoiceContent(
+        @PathVariable id: UUID,
+        @PathVariable acquisitionId: UUID,
+    ): ResponseEntity<ByteArray> =
+        try {
+            val invoice = acquisitionInvoiceUseCase.downloadInvoice(ItemId(id), ItemSourceId(acquisitionId))
+            ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(
+                    HttpHeaders.CONTENT_DISPOSITION,
+                    ContentDisposition.inline()
+                        .filename(invoice.originalFilename.value, Charsets.UTF_8)
+                        .build()
+                        .toString(),
+                )
+                .body(invoice.content)
+        } catch (exception: EntityNotFoundException) {
+            throw invoiceNotFoundResponse(exception)
+        }
+
     @GetMapping("/items/{id}/acquisitions/{acquisitionId}/invoice/delete")
     fun confirmDeleteAcquisitionInvoice(
         @PathVariable id: UUID,

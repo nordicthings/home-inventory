@@ -52,7 +52,7 @@ Die UI-Verbesserungen für numerische Eingaben sind bereits umgesetzt und gehör
 - In der Statusspalte der Gegenstandsliste soll höchstens ein Icon aus dem anwendungsweiten Icon-Set Lucide angezeigt werden. Die fachliche Priorität lautet: `Zu prüfen` vor `Rechnung liegt vor` vor `Schätzwert`.
 - Ein Gegenstand soll mit `Zu prüfen` markiert werden können, wenn zu ihm noch Recherche notwendig ist, z. B. Suche nach Belegen oder Klärung des Verbleibs.
 
-## Version 2
+## Version 1.4
 
 - Es soll eine Vorschau der PDF-Rechnung direkt in der Anwendung möglich sein.
 - Über den Datenbestand soll ein Report erstellt werden können.
@@ -61,11 +61,11 @@ Die UI-Verbesserungen für numerische Eingaben sind bereits umgesetzt und gehör
   - Der Report soll eine Gesamtsumme über die gelisteten Gegenstände ausweisen.
   - Der Report soll als PDF exportiert werden.
 
-Nicht Teil von Version 2:
+## Nicht Teil von Version 1.x:
 
 - Benutzerkonten werden bis auf Weiteres nicht eingeführt, da die Anwendung nur im lokalen Heimnetz sichtbar ist und aktuell keine spezifischen Berechtigungen benötigt werden.
-- Mobile Nutzung wird auf Version 3 verschoben.
-- Fotos werden auf Version 3 verschoben.
+- Mobile Nutzung wird auf Version 2 verschoben.
+- Fotos werden auf Version 2 verschoben.
 
 ## Felder
 
