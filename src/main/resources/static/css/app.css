@@ -124,6 +124,20 @@ a {
     gap: 10px;
 }
 
+.page__title {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.version-badge {
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 h1 {
     margin: 0;
     font-size: 1.75rem;

@@ -18,6 +18,7 @@ spring:
     open-in-view: false
 
 home-inventory:
+  version: ${HOME_INVENTORY_VERSION:dev}
   files:
     storage-path: ${HOME_INVENTORY_FILES_STORAGE_PATH:.local/files}
     max-upload-size: ${HOME_INVENTORY_FILES_MAX_UPLOAD_SIZE:10MB}

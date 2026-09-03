@@ -42,6 +42,7 @@ import kotlin.test.assertNotNull
     properties = [
         "spring.datasource.url=jdbc:h2:mem:home_inventory_web;MODE=MariaDB;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
         "home-inventory.files.storage-path=.local/test-files-web",
+        "home-inventory.version=9.8.7-test",
     ],
 )
 class ItemWebControllerTest {
@@ -72,6 +73,7 @@ class ItemWebControllerTest {
 
         assertEquals(200, response.statusCode())
         assertContains(response.body(), "<h1>Inventar</h1>")
+        assertContains(response.body(), "Version 9.8.7-test")
         assertContains(response.body(), """/js/inventory-list-scroll.js""")
         assertContains(response.body(), """data-inventory-scroll-container""")
         assertContains(response.body(), "Gegenstand hinzufügen")

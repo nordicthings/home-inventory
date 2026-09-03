@@ -26,7 +26,10 @@
 
 <main class="page page--inventory">
     <div class="page__header">
-        <h1>Inventar</h1>
+        <div class="page__title">
+            <h1>Inventar</h1>
+            <span class="version-badge" th:text="'Version ' + ${applicationVersion}">Version dev</span>
+        </div>
         <div class="page__actions">
             <a class="button button--secondary"
                th:href="@{/items/report(name=${page.filter.name},categoryId=${page.filter.categoryId},locationId=${page.filter.locationId},sourceId=${page.filter.sourceId},status=${page.filter.status},sort=${page.sort.field},direction=${page.sort.direction})}">

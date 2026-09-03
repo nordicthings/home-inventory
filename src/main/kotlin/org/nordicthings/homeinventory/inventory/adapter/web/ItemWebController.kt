@@ -25,6 +25,7 @@ import org.nordicthings.homeinventory.inventory.domain.LocationId
 import org.nordicthings.homeinventory.inventory.domain.MonetaryValue
 import org.nordicthings.homeinventory.inventory.domain.Quantity
 import org.nordicthings.homeinventory.inventory.domain.SourceId
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ContentDisposition
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -56,6 +57,8 @@ class ItemWebController(
     private val getSourceListUseCase: GetSourceListUseCase,
     private val acquisitionInvoiceUseCase: AcquisitionInvoiceUseCase,
     private val itemReportPdfRenderer: ItemReportPdfRenderer,
+    @param:Value("\${home-inventory.version:dev}")
+    private val applicationVersion: String,
 ) {
 
     @GetMapping("/", "/items")
@@ -75,6 +78,7 @@ class ItemWebController(
         model.addAttribute("page", page)
         model.addAttribute("items", page.items)
         model.addAttribute("sort", page.sort)
+        model.addAttribute("applicationVersion", applicationVersion)
         return "items/list"
     }
 

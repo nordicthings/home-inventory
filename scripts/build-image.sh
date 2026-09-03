@@ -68,7 +68,7 @@ TAR_IMAGE_NAME="$(printf '%s' "${IMAGE_NAME}" | sed 's#[/:]#-#g')"
 TAR_FILE="${TAR_FILE:-${EXPORT_DIR%/}/${TAR_IMAGE_NAME}-${IMAGE_TAG}.tar}"
 
 ./gradlew clean bootJar
-docker build --platform "${PLATFORM}" -t "${IMAGE_NAME}:${IMAGE_TAG}" -t "${IMAGE_NAME}:latest" .
+docker build --platform "${PLATFORM}" --build-arg APP_VERSION="${IMAGE_TAG}" -t "${IMAGE_NAME}:${IMAGE_TAG}" -t "${IMAGE_NAME}:latest" .
 
 if [ "${EXPORT_IMAGE}" = "true" ]; then
   mkdir -p "$(dirname "${TAR_FILE}")"
