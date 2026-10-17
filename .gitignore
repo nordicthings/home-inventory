@@ -42,3 +42,8 @@ out/
 # Local environment
 *.env
 .local/
+
+# Archify
+.archify
+.agents
+skills-lock.json

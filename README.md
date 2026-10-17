@@ -139,7 +139,7 @@ Danach mit mysql-Client auf dem NAS eine Verbindung herstellen:
 
 
 ### Datenbank anlegen
-`create home_inventory;`
+`create database home_inventory;`
 
 ### Benutzer anlegen
 
